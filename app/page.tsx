@@ -1,103 +1,135 @@
-import Image from "next/image";
+import { MainLayout } from "@/components/layout/main-layout"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Users, Target, MessageSquare, TrendingUp, Plus } from "lucide-react"
+import Link from "next/link"
+import { ProtectedRoute } from "@/components/auth/protected-route"
 
-export default function Home() {
+export default function DashboardPage() {
   return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+    <ProtectedRoute>
+      <MainLayout>
+        <div className="space-y-8">
+          {/* Header */}
+          <div className="flex flex-col space-y-4 md:flex-row md:items-center md:justify-between md:space-y-0">
+            <div>
+              <h1 className="text-3xl font-bold text-foreground font-playfair">Welcome to PulseFlow CRM</h1>
+              <p className="text-muted-foreground mt-2">
+                Manage your customers, campaigns, and segments all in one place
+              </p>
+            </div>
+            <div className="flex space-x-3">
+              <Button asChild>
+                <Link href="/segments">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Create Segment
+                </Link>
+              </Button>
+              <Button variant="outline" asChild>
+                <Link href="/campaigns">
+                  <MessageSquare className="w-4 h-4 mr-2" />
+                  New Campaign
+                </Link>
+              </Button>
+            </div>
+          </div>
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+          {/* Stats Cards */}
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Total Customers</CardTitle>
+                <Users className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">1,234</div>
+                <p className="text-xs text-muted-foreground">+12% from last month</p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Active Segments</CardTitle>
+                <Target className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">23</div>
+                <p className="text-xs text-muted-foreground">+3 new this week</p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Campaigns Sent</CardTitle>
+                <MessageSquare className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">89</div>
+                <p className="text-xs text-muted-foreground">+7 this month</p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Engagement Rate</CardTitle>
+                <TrendingUp className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">68.2%</div>
+                <p className="text-xs text-muted-foreground">+2.1% from last week</p>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Quick Actions */}
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Target className="w-5 h-5 mr-2 text-primary" />
+                  Build Audience Segment
+                </CardTitle>
+                <CardDescription>Create targeted customer segments using advanced filtering rules</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button asChild className="w-full">
+                  <Link href="/segments">Get Started</Link>
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <MessageSquare className="w-5 h-5 mr-2 text-primary" />
+                  Launch Campaign
+                </CardTitle>
+                <CardDescription>Send targeted messages to your customer segments</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button asChild className="w-full">
+                  <Link href="/campaigns">Create Campaign</Link>
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Users className="w-5 h-5 mr-2 text-primary" />
+                  Manage Customers
+                </CardTitle>
+                <CardDescription>View and manage your customer database</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button asChild className="w-full">
+                  <Link href="/customers">View Customers</Link>
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
-  );
+      </MainLayout>
+    </ProtectedRoute>
+  )
 }
