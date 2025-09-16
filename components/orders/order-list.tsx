@@ -23,6 +23,15 @@ import { api } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
 import { Order, Customer } from '@/lib/types';
 
+interface PopulatedOrderLike {
+  _id: string;
+  customerId: { _id: string; name?: string; email?: string } | string;
+  orderAmount: number;
+  orderDate: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export function OrderList() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -39,11 +48,19 @@ export function OrderList() {
       ]);
 
       // Handle different response formats
-      const ordersData = Array.isArray(ordersResponse)
+      const ordersDataRaw = Array.isArray(ordersResponse)
         ? ordersResponse
         : Array.isArray((ordersResponse as { data?: Order[] })?.data)
         ? (ordersResponse as { data: Order[] }).data
         : [];
+
+      // Normalize orders so customerId is always a string
+      const ordersData: Order[] = ordersDataRaw.map((o: unknown) => {
+        if (isPopulatedOrder(o) && typeof o.customerId === 'object') {
+          return { ...o, customerId: o.customerId._id } as Order;
+        }
+        return o as Order;
+      });
 
       const customersData = Array.isArray(customersResponse)
         ? customersResponse
@@ -107,6 +124,17 @@ export function OrderList() {
     const customer = customers.find((c) => c._id === customerId);
     return customer ? customer.name : 'Unknown Customer';
   };
+
+  function isPopulatedOrder(o: unknown): o is PopulatedOrderLike {
+    return (
+      typeof o === 'object' &&
+      o !== null &&
+      '_id' in o &&
+      'customerId' in o &&
+      'orderAmount' in o &&
+      'orderDate' in o
+    );
+  }
 
   const getOrderStatus = (orderDate: string, amount: number) => {
     const daysSince = Math.floor(

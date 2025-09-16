@@ -1,7 +1,6 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import {
   Card,
   CardContent,
@@ -20,14 +19,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import {
-  Users,
-  Search,
-  Mail,
-  Phone,
-  DollarSign,
-  Calendar,
-} from 'lucide-react';
+import { Users, Search, Mail, Phone, DollarSign, Calendar } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
 import { Customer } from '@/lib/types';
@@ -39,9 +31,26 @@ export function CustomerList() {
   const [searchTerm, setSearchTerm] = useState('');
   const { toast } = useToast();
 
+  const fetchCustomers = useCallback(async () => {
+    try {
+      const response = await api.customers.getAll();
+      const customersArray = Array.isArray(response) ? response : [];
+      setCustomers(customersArray);
+      setFilteredCustomers(customersArray);
+    } catch {
+      toast({
+        title: 'Failed to load customers',
+        description: 'Unable to fetch customers. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  }, [toast]);
+
   useEffect(() => {
     fetchCustomers();
-  }, []);
+  }, [fetchCustomers]);
 
   useEffect(() => {
     if (searchTerm) {
@@ -56,27 +65,7 @@ export function CustomerList() {
     }
   }, [searchTerm, customers]);
 
-  const fetchCustomers = async () => {
-    try {
-      const response = await api.customers.getAll();
-
-      // The backend returns { success, data, pagination }
-      const customersArray = Array.isArray((response as any).data)
-        ? (response as any).data
-        : [];
-
-      setCustomers(customersArray);
-      setFilteredCustomers(customersArray);
-    } catch (error) {
-      toast({
-        title: 'Failed to load customers',
-        description: 'Unable to fetch customers. Please try again.',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  // fetchCustomers defined via useCallback
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {

@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 // TypeScript interfaces matching the OpenAPI specification exactly
 
 export interface User {

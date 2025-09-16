@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Card,
@@ -24,7 +24,7 @@ import {
 import { ArrowLeft, Send, Users, Target } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
-import { Segment, CreateCampaignRequest } from '@/lib/types';
+import { Segment } from '@/lib/types';
 import Link from 'next/link';
 
 interface CampaignData {
@@ -47,15 +47,30 @@ export function CampaignCreator() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
+  const fetchSegments = useCallback(async () => {
+    try {
+      const response = await api.segments.getAll();
+      // response already unwrapped (array of segments)
+      const segmentsArray = Array.isArray(response) ? response : [];
+      setSegments(segmentsArray);
+    } catch {
+      toast({
+        title: 'Failed to load segments',
+        description: 'Unable to fetch segments. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoadingSegments(false);
+    }
+  }, [toast]);
+
   useEffect(() => {
     fetchSegments();
-
-    // Pre-select segment if provided in URL
     const segmentId = searchParams.get('segmentId');
     if (segmentId) {
       setCampaign((prev) => ({ ...prev, segmentId }));
     }
-  }, [searchParams]);
+  }, [searchParams, fetchSegments]);
 
   useEffect(() => {
     if (campaign.segmentId && segments.length > 0) {
@@ -63,28 +78,6 @@ export function CampaignCreator() {
       setSelectedSegment(segment || null);
     }
   }, [campaign.segmentId, segments]);
-
-  const fetchSegments = async () => {
-  try {
-    const response = await api.segments.getAll();
-
-    // unwrap backend response
-    const segmentsArray = Array.isArray((response as any).data)
-      ? (response as any).data
-      : [];
-
-    setSegments(segmentsArray);
-  } catch (error) {
-    toast({
-      title: 'Failed to load segments',
-      description: 'Unable to fetch segments. Please try again.',
-      variant: 'destructive',
-    });
-  } finally {
-    setIsLoadingSegments(false);
-  }
-};
-
 
   const createCampaign = async () => {
     if (!campaign.name || !campaign.segmentId || !campaign.message) {
@@ -99,12 +92,17 @@ export function CampaignCreator() {
     setIsLoading(true);
     try {
       const newCampaign = await api.campaigns.create(campaign);
+      // newCampaign is unwrapped Campaign
       toast({
         title: 'Campaign created',
         description: 'Your campaign has been created successfully.',
       });
-      router.push(`/campaigns/${newCampaign._id}`);
-    } catch (error) {
+      if (newCampaign && (newCampaign as any)._id) {
+        router.push(`/campaigns/${(newCampaign as any)._id}`);
+      } else {
+        router.push('/campaigns');
+      }
+    } catch {
       toast({
         title: 'Creation failed',
         description: 'Unable to create campaign. Please try again.',

@@ -13,7 +13,6 @@ import {
   BarChart3,
   Menu,
   X,
-  Sparkles,
   LogOut,
 } from 'lucide-react';
 import { useAuth } from '@/components/auth/auth-provider';
@@ -32,7 +31,6 @@ const navigation = [
   { name: 'Segments', href: '/segments', icon: Target },
   { name: 'Campaigns', href: '/campaigns', icon: MessageSquare },
   { name: 'Orders', href: '/orders', icon: ShoppingCart },
-  { name: 'AI Assistant', href: '/ai', icon: Sparkles },
 ];
 
 export function Sidebar() {

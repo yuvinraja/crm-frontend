@@ -24,12 +24,18 @@ import { Separator } from '@/components/ui/separator';
 import { Plus, X, Eye, Save, ArrowLeft, Sparkles } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
-import { SegmentCondition } from '@/lib/types';
+import { SegmentCondition, CreateSegmentRequest } from '@/lib/types';
 import Link from 'next/link';
+
+type DraftSegmentCondition = {
+  field: '' | SegmentCondition['field'];
+  operator: '' | SegmentCondition['operator'];
+  value: '' | SegmentCondition['value'];
+};
 
 interface SegmentData {
   name: string;
-  conditions: SegmentCondition[];
+  conditions: DraftSegmentCondition[];
   logic: 'AND' | 'OR';
 }
 
@@ -77,7 +83,7 @@ export function SegmentBuilder() {
           description:
             'Your AI-generated segment has been loaded. Review and save when ready.',
         });
-      } catch (error) {
+      } catch {
         toast({
           title: 'Failed to load AI segment',
           description: 'There was an error loading the AI-generated segment.',
@@ -138,9 +144,9 @@ export function SegmentBuilder() {
       const previewData = {
         name: segment.name,
         conditions: segment.conditions.map((c) => ({
-          field: c.field,
-          operator: c.operator,
-          value: c.value,
+          field: c.field as SegmentCondition['field'],
+          operator: c.operator as SegmentCondition['operator'],
+          value: c.value as SegmentCondition['value'],
         })),
         logic: segment.logic,
       };
@@ -154,8 +160,7 @@ export function SegmentBuilder() {
         title: 'Audience Preview',
         description: `This segment would target ${result.audienceSize} customers.`,
       });
-    } catch (error) {
-      console.error('Preview failed:', error);
+    } catch {
       toast({
         title: 'Preview failed',
         description: 'Unable to preview audience. Please try again.',
@@ -181,15 +186,23 @@ export function SegmentBuilder() {
 
     setIsLoading(true);
     try {
-      await api.segments.create(segment);
+      const payload: CreateSegmentRequest = {
+        name: segment.name,
+        logic: segment.logic,
+        conditions: segment.conditions.map((c) => ({
+          field: c.field as SegmentCondition['field'],
+          operator: c.operator as SegmentCondition['operator'],
+          value: c.value as SegmentCondition['value'],
+        })),
+      };
+      await api.segments.create(payload);
       toast({
         title: 'Segment created',
         description: 'Your customer segment has been saved successfully.',
       });
       // Redirect to campaigns page to show history of campaigns
       router.push('/campaigns');
-    } catch (error) {
-      console.error('Save failed:', error);
+    } catch {
       toast({
         title: 'Save failed',
         description: 'Unable to save segment. Please try again.',
@@ -300,7 +313,7 @@ export function SegmentBuilder() {
                           Field
                         </Label>
                         <Select
-                          value={condition.field}
+                          value={condition.field || ''}
                           onValueChange={(value) =>
                             updateCondition(index, 'field', value || '')
                           }
@@ -324,7 +337,7 @@ export function SegmentBuilder() {
                           Operator
                         </Label>
                         <Select
-                          value={condition.operator}
+                          value={condition.operator || ''}
                           onValueChange={(value) =>
                             updateCondition(index, 'operator', value || '')
                           }
@@ -360,7 +373,12 @@ export function SegmentBuilder() {
                               <Input
                                 type="date"
                                 placeholder="Select date"
-                                value={condition.value}
+                                value={
+                                  typeof condition.value === 'string' ||
+                                  typeof condition.value === 'number'
+                                    ? String(condition.value)
+                                    : ''
+                                }
                                 onChange={(e) =>
                                   updateCondition(
                                     index,
@@ -375,7 +393,12 @@ export function SegmentBuilder() {
                               <Input
                                 type="number"
                                 placeholder="Enter value"
-                                value={condition.value}
+                                value={
+                                  typeof condition.value === 'string' ||
+                                  typeof condition.value === 'number'
+                                    ? String(condition.value)
+                                    : ''
+                                }
                                 onChange={(e) =>
                                   updateCondition(
                                     index,
@@ -390,7 +413,12 @@ export function SegmentBuilder() {
                               <Input
                                 type="text"
                                 placeholder="Enter value"
-                                value={condition.value}
+                                value={
+                                  typeof condition.value === 'string' ||
+                                  typeof condition.value === 'number'
+                                    ? String(condition.value)
+                                    : ''
+                                }
                                 onChange={(e) =>
                                   updateCondition(
                                     index,

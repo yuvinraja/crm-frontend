@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import {
   Card,
   CardContent,
@@ -30,7 +30,7 @@ import {
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
-import { Campaign, CampaignStats, CommunicationLog } from '@/lib/types';
+import { Campaign, CommunicationLog } from '@/lib/types';
 import Link from 'next/link';
 
 interface CampaignDetailsProps {
@@ -39,27 +39,61 @@ interface CampaignDetailsProps {
 
 export function CampaignDetails({ campaignId }: CampaignDetailsProps) {
   const [campaign, setCampaign] = useState<Campaign | null>(null);
-  const [stats, setStats] = useState<CampaignStats | null>(null);
+  const [stats, setStats] = useState<{
+    sent: number;
+    failed: number;
+    pending: number;
+    audienceSize: number;
+    deliveryBuckets: { label: string; count: number }[];
+  } | null>(null);
   const [logs, setLogs] = useState<CommunicationLog[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
-  useEffect(() => {
-    fetchCampaignDetails();
-  }, [campaignId]);
-
-  const fetchCampaignDetails = async () => {
+  const fetchCampaignDetails = useCallback(async () => {
+    setIsLoading(true);
     try {
-      const [campaignData, statsData, logsData] = await Promise.all([
+      const [campaignData, logsData] = await Promise.all([
         api.campaigns.getById(campaignId),
-        api.campaigns.getStats(campaignId),
         api.communications.getByCampaign(campaignId),
       ]);
-
       setCampaign(campaignData);
-      setStats(statsData);
       setLogs(logsData);
-    } catch (error) {
+      const sent = logsData.filter((l) => l.deliveryStatus === 'SENT').length;
+      const failed = logsData.filter(
+        (l) => l.deliveryStatus === 'FAILED'
+      ).length;
+      const pending = logsData.filter(
+        (l) => l.deliveryStatus === 'PENDING'
+      ).length;
+      const audienceSize = logsData.length;
+      const buckets = [
+        { label: '<1m', count: 0 },
+        { label: '1-5m', count: 0 },
+        { label: '5-15m', count: 0 },
+        { label: '15-60m', count: 0 },
+        { label: '>1h', count: 0 },
+      ];
+      logsData.forEach((log) => {
+        const start = new Date(log.createdAt).getTime();
+        const end = new Date(
+          log.vendorResponse?.timestamp || log.updatedAt || log.createdAt
+        ).getTime();
+        const diffMin = (end - start) / 60000;
+        if (diffMin < 1) buckets[0].count++;
+        else if (diffMin < 5) buckets[1].count++;
+        else if (diffMin < 15) buckets[2].count++;
+        else if (diffMin < 60) buckets[3].count++;
+        else buckets[4].count++;
+      });
+      setStats({
+        sent,
+        failed,
+        pending,
+        audienceSize,
+        deliveryBuckets: buckets,
+      });
+    } catch {
       toast({
         title: 'Failed to load campaign',
         description: 'Unable to fetch campaign details. Please try again.',
@@ -68,7 +102,13 @@ export function CampaignDetails({ campaignId }: CampaignDetailsProps) {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [campaignId, toast]);
+
+  useEffect(() => {
+    fetchCampaignDetails();
+  }, [fetchCampaignDetails]);
+
+  // (fetchCampaignDetails defined via useCallback above)
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -214,6 +254,27 @@ export function CampaignDetails({ campaignId }: CampaignDetailsProps) {
           </CardContent>
         </Card>
       </div>
+
+      {/* Delivery Timing Distribution */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Delivery Timing Analysis</CardTitle>
+          <CardDescription>Time from creation to final status</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+            {stats.deliveryBuckets.map((b) => (
+              <div
+                key={b.label}
+                className="text-center p-3 bg-muted rounded-lg"
+              >
+                <div className="text-sm font-medium">{b.label}</div>
+                <div className="text-xl font-bold">{b.count}</div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
 
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Campaign Message */}

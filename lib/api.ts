@@ -52,7 +52,7 @@ export async function apiRequest<T>(
 
     const contentType = response.headers.get('content-type');
     if (contentType && contentType.includes('application/json')) {
-      return await response.json();
+      return (await response.json()) as T;
     }
 
     return {} as T;
@@ -67,6 +67,19 @@ export async function apiRequest<T>(
       }`
     );
   }
+}
+
+// Helper to unwrap the common { success, data } structure; returns raw data or provided fallback
+function unwrap<T>(res: ApiResponseWrapper<T> | T, fallback: T): T {
+  if (
+    res &&
+    typeof res === 'object' &&
+    'success' in (res as any) &&
+    'data' in (res as any)
+  ) {
+    return (res as ApiResponseWrapper<T>).data;
+  }
+  return (res as T) ?? fallback;
 }
 
 // API endpoints based on OpenAPI spec
@@ -95,19 +108,32 @@ export const api = {
 
   // Customer endpoints
   customers: {
-    getAll: () => apiRequest<ApiResponseWrapper<Customer[]>>('/customers'),
-    getById: (id: string) =>
-      apiRequest<ApiResponseWrapper<Customer>>(`/customers/${id}`),
-    create: (data: CreateCustomerRequest) =>
-      apiRequest<ApiResponseWrapper<Customer>>('/customers', {
-        method: 'POST',
-        body: JSON.stringify(data),
-      }),
-    update: (id: string, data: UpdateCustomerRequest) =>
-      apiRequest<ApiResponseWrapper<Customer>>(`/customers/${id}`, {
-        method: 'PUT',
-        body: JSON.stringify(data),
-      }),
+    getAll: async () =>
+      unwrap(
+        await apiRequest<ApiResponseWrapper<Customer[]>>('/customers'),
+        []
+      ),
+    getById: async (id: string) =>
+      unwrap(
+        await apiRequest<ApiResponseWrapper<Customer>>(`/customers/${id}`),
+        {} as Customer
+      ),
+    create: async (data: CreateCustomerRequest) =>
+      unwrap(
+        await apiRequest<ApiResponseWrapper<Customer>>('/customers', {
+          method: 'POST',
+          body: JSON.stringify(data),
+        }),
+        {} as Customer
+      ),
+    update: async (id: string, data: UpdateCustomerRequest) =>
+      unwrap(
+        await apiRequest<ApiResponseWrapper<Customer>>(`/customers/${id}`, {
+          method: 'PUT',
+          body: JSON.stringify(data),
+        }),
+        {} as Customer
+      ),
     delete: (id: string) =>
       apiRequest<{ message: string }>(`/customers/${id}`, {
         method: 'DELETE',
@@ -116,21 +142,36 @@ export const api = {
 
   // Order endpoints
   orders: {
-    getAll: () => apiRequest<ApiResponseWrapper<Order[]>>('/orders'),
-    getById: (id: string) =>
-      apiRequest<ApiResponseWrapper<Order[]>>(`/orders/${id}`),
-    getByCustomer: (customerId: string) =>
-      apiRequest<ApiResponseWrapper<Order[]>>(`/orders/customer/${customerId}`),
-    create: (data: CreateOrderRequest) =>
-      apiRequest<ApiResponseWrapper<Order>>('/orders', {
-        method: 'POST',
-        body: JSON.stringify(data),
-      }),
-    update: (id: string, data: UpdateOrderRequest) =>
-      apiRequest<ApiResponseWrapper<Order>>(`/orders/${id}`, {
-        method: 'PUT',
-        body: JSON.stringify(data),
-      }),
+    getAll: async () =>
+      unwrap(await apiRequest<ApiResponseWrapper<Order[]>>('/orders'), []),
+    getById: async (id: string) =>
+      unwrap(
+        await apiRequest<ApiResponseWrapper<Order>>(`/orders/${id}`),
+        {} as Order
+      ),
+    getByCustomer: async (customerId: string) =>
+      unwrap(
+        await apiRequest<ApiResponseWrapper<Order[]>>(
+          `/orders/customer/${customerId}`
+        ),
+        []
+      ),
+    create: async (data: CreateOrderRequest) =>
+      unwrap(
+        await apiRequest<ApiResponseWrapper<Order>>('/orders', {
+          method: 'POST',
+          body: JSON.stringify(data),
+        }),
+        {} as Order
+      ),
+    update: async (id: string, data: UpdateOrderRequest) =>
+      unwrap(
+        await apiRequest<ApiResponseWrapper<Order>>(`/orders/${id}`, {
+          method: 'PUT',
+          body: JSON.stringify(data),
+        }),
+        {} as Order
+      ),
     delete: (id: string) =>
       apiRequest<{ message: string }>(`/orders/${id}`, {
         method: 'DELETE',
@@ -139,66 +180,126 @@ export const api = {
 
   // Segment endpoints
   segments: {
-    getAll: () => apiRequest<ApiResponseWrapper<Segment[]>>('/segments'),
-    getById: (id: string) =>
-      apiRequest<ApiResponseWrapper<Segment>>(`/segments/${id}`),
-    getCustomers: (id: string) =>
-      apiRequest<ApiResponseWrapper<Customer[]>>(`/segments/${id}/customers`),
-    create: (data: CreateSegmentRequest) =>
-      apiRequest<ApiResponseWrapper<Segment>>('/segments', {
-        method: 'POST',
-        body: JSON.stringify(data),
-      }),
-    update: (id: string, data: UpdateSegmentRequest) =>
-      apiRequest<ApiResponseWrapper<Segment>>(`/segments/${id}`, {
-        method: 'PUT',
-        body: JSON.stringify(data),
-      }),
+    getAll: async () =>
+      unwrap(await apiRequest<ApiResponseWrapper<Segment[]>>('/segments'), []),
+    getById: async (id: string) =>
+      unwrap(
+        await apiRequest<ApiResponseWrapper<Segment>>(`/segments/${id}`),
+        {} as Segment
+      ),
+    getCustomers: async (id: string) =>
+      unwrap(
+        await apiRequest<ApiResponseWrapper<Customer[]>>(
+          `/segments/${id}/customers`
+        ),
+        []
+      ),
+    create: async (data: CreateSegmentRequest) =>
+      unwrap(
+        await apiRequest<ApiResponseWrapper<Segment>>('/segments', {
+          method: 'POST',
+          body: JSON.stringify(data),
+        }),
+        {} as Segment
+      ),
+    update: async (id: string, data: UpdateSegmentRequest) =>
+      unwrap(
+        await apiRequest<ApiResponseWrapper<Segment>>(`/segments/${id}`, {
+          method: 'PUT',
+          body: JSON.stringify(data),
+        }),
+        {} as Segment
+      ),
     delete: (id: string) =>
       apiRequest<{ message: string }>(`/segments/${id}`, {
         method: 'DELETE',
       }),
-    preview: (data: { conditions: any[]; logic: 'AND' | 'OR' }) =>
-      apiRequest<
-        ApiResponseWrapper<{
-          audienceSize: number;
-          sampleCustomers: Customer[];
-        }>
-      >('/segments/preview', {
-        method: 'POST',
-        body: JSON.stringify(data),
-      }),
+    preview: async (data: { conditions: any[]; logic: 'AND' | 'OR' }) =>
+      unwrap(
+        await apiRequest<
+          ApiResponseWrapper<{
+            audienceSize: number;
+            sampleCustomers: Customer[];
+          }>
+        >('/segments/preview', {
+          method: 'POST',
+          body: JSON.stringify(data),
+        }),
+        { audienceSize: 0, sampleCustomers: [] }
+      ),
   },
 
   // Campaign endpoints
   campaigns: {
-    getAll: () => apiRequest<ApiResponseWrapper<Campaign[]>>('/campaigns'),
-    getById: (id: string) =>
-      apiRequest<ApiResponseWrapper<Campaign[]>>(`/campaigns/${id}`),
-    create: (data: CreateCampaignRequest) =>
-      apiRequest<ApiResponseWrapper<Campaign>>('/campaigns', {
-        method: 'POST',
-        body: JSON.stringify(data),
-      }),
+    getAll: async () =>
+      unwrap(
+        await apiRequest<ApiResponseWrapper<Campaign[]>>('/campaigns'),
+        []
+      ),
+    getById: async (id: string) =>
+      unwrap(
+        await apiRequest<ApiResponseWrapper<Campaign>>(`/campaigns/${id}`),
+        {} as Campaign
+      ),
+    create: async (data: CreateCampaignRequest) =>
+      unwrap(
+        await apiRequest<ApiResponseWrapper<Campaign>>('/campaigns', {
+          method: 'POST',
+          body: JSON.stringify(data),
+        }),
+        {} as Campaign
+      ),
+    // History endpoint (assuming same as getAll but already sorted by backend or not)
+    getHistory: async () =>
+      unwrap(
+        await apiRequest<ApiResponseWrapper<Campaign[]>>('/campaigns'),
+        []
+      ),
+    // Derive stats client-side from communications logs if backend lacks /campaigns/:id/stats
+    getStats: async (id: string) => {
+      // Fetch communications for campaign and compute aggregates
+      const logs = await api.communications.getByCampaign(id);
+      const sent = logs.filter((l) => l.deliveryStatus === 'SENT').length;
+      const failed = logs.filter((l) => l.deliveryStatus === 'FAILED').length;
+      const pending = logs.filter((l) => l.deliveryStatus === 'PENDING').length;
+      const audienceSize = logs.length; // fallback if campaign.stats not provided
+      return { sent, failed, pending, audienceSize };
+    },
   },
 
   // Communication endpoints
   communications: {
-    getAll: () =>
-      apiRequest<ApiResponseWrapper<CommunicationLog[]>>('/communications'),
-    getById: (id: string) =>
-      apiRequest<ApiResponseWrapper<CommunicationLog>>(`/communications/${id}`),
-    getByCampaign: (campaignId: string) =>
-      apiRequest<ApiResponseWrapper<CommunicationLog[]>>(
-        `/communications/campaign/${campaignId}`
+    getAll: async () =>
+      unwrap(
+        await apiRequest<ApiResponseWrapper<CommunicationLog[]>>(
+          '/communications'
+        ),
+        []
       ),
-    updateStatus: (id: string, status: 'PENDING' | 'SENT' | 'FAILED') =>
-      apiRequest<ApiResponseWrapper<CommunicationLog>>(
-        `/communications/${id}/status`,
-        {
-          method: 'PUT',
-          body: JSON.stringify({ deliveryStatus: status }),
-        }
+    getById: async (id: string) =>
+      unwrap(
+        await apiRequest<ApiResponseWrapper<CommunicationLog>>(
+          `/communications/${id}`
+        ),
+        {} as CommunicationLog
+      ),
+    getByCampaign: async (campaignId: string) =>
+      unwrap(
+        await apiRequest<ApiResponseWrapper<CommunicationLog[]>>(
+          `/communications/campaign/${campaignId}`
+        ),
+        []
+      ),
+    updateStatus: async (id: string, status: 'PENDING' | 'SENT' | 'FAILED') =>
+      unwrap(
+        await apiRequest<ApiResponseWrapper<CommunicationLog>>(
+          `/communications/${id}/status`,
+          {
+            method: 'PUT',
+            body: JSON.stringify({ deliveryStatus: status }),
+          }
+        ),
+        {} as CommunicationLog
       ),
     deliveryReceipt: (data: {
       messageId: string;

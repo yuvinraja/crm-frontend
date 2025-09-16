@@ -1,7 +1,7 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+// Segment list component
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import {
   Card,
   CardContent,
@@ -37,31 +37,25 @@ export function SegmentList() {
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
+  const fetchSegments = useCallback(async () => {
+    try {
+      const response = await api.segments.getAll();
+      const segmentsArray = Array.isArray(response) ? response : [];
+      setSegments(segmentsArray);
+    } catch {
+      toast({
+        title: 'Failed to load segments',
+        description: 'Unable to fetch segments. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  }, [toast]);
+
   useEffect(() => {
     fetchSegments();
-  }, []);
-
-const fetchSegments = async () => {
-  try {
-    const response = await api.segments.getAll();
-
-    // unwrap backend response
-    const segmentsArray = Array.isArray((response as any).data)
-      ? (response as any).data
-      : [];
-
-    setSegments(segmentsArray);
-  } catch (error) {
-    toast({
-      title: 'Failed to load segments',
-      description: 'Unable to fetch segments. Please try again.',
-      variant: 'destructive',
-    });
-  } finally {
-    setIsLoading(false);
-  }
-};
-
+  }, [fetchSegments]);
 
   const deleteSegment = async (id: string) => {
     try {
@@ -71,7 +65,7 @@ const fetchSegments = async () => {
         title: 'Segment deleted',
         description: 'The segment has been removed successfully.',
       });
-    } catch (error) {
+    } catch {
       toast({
         title: 'Delete failed',
         description: 'Unable to delete segment. Please try again.',
@@ -82,12 +76,12 @@ const fetchSegments = async () => {
 
   const previewAudience = async (segment: Segment) => {
     try {
-      const audience = await api.segments.getAudience(segment._id);
+      const audience = await api.segments.getCustomers(segment._id);
       toast({
         title: 'Audience Preview',
         description: `"${segment.name}" targets ${audience.length} customers.`,
       });
-    } catch (error) {
+    } catch {
       toast({
         title: 'Preview failed',
         description: 'Unable to preview audience. Please try again.',
