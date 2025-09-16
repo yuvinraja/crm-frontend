@@ -24,7 +24,7 @@ import { Separator } from '@/components/ui/separator';
 import { Plus, X, Eye, Save, ArrowLeft, Sparkles } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
-import { SegmentCondition, CreateSegmentRequest } from '@/lib/types';
+import { SegmentCondition } from '@/lib/types';
 import Link from 'next/link';
 
 interface SegmentData {
@@ -119,7 +119,9 @@ export function SegmentBuilder() {
   const previewAudience = async () => {
     if (
       !segment.name ||
-      segment.conditions.some((c) => !c.field || !c.operator || c.value === '')
+      segment.conditions.some(
+        (c) => !c.field || !c.operator || c.value === null || c.value === ''
+      )
     ) {
       toast({
         title: 'Incomplete segment',
@@ -132,13 +134,22 @@ export function SegmentBuilder() {
 
     setIsPreviewLoading(true);
     try {
+      // Prepare data for preview
       const previewData = {
-        name: segment.name, // Include name for preview
-        conditions: segment.conditions,
+        name: segment.name,
+        conditions: segment.conditions.map((c) => ({
+          field: c.field,
+          operator: c.operator,
+          value: c.value,
+        })),
         logic: segment.logic,
       };
+
+      // Call backend preview endpoint
       const result = await api.segments.preview(previewData);
+
       setAudienceSize(result.audienceSize);
+
       toast({
         title: 'Audience Preview',
         description: `This segment would target ${result.audienceSize} customers.`,
@@ -291,7 +302,7 @@ export function SegmentBuilder() {
                         <Select
                           value={condition.field}
                           onValueChange={(value) =>
-                            updateCondition(index, 'field', value)
+                            updateCondition(index, 'field', value || '')
                           }
                         >
                           <SelectTrigger>
@@ -315,7 +326,7 @@ export function SegmentBuilder() {
                         <Select
                           value={condition.operator}
                           onValueChange={(value) =>
-                            updateCondition(index, 'operator', value)
+                            updateCondition(index, 'operator', value || '')
                           }
                         >
                           <SelectTrigger>
@@ -369,7 +380,7 @@ export function SegmentBuilder() {
                                   updateCondition(
                                     index,
                                     'value',
-                                    Number.parseFloat(e.target.value) || ''
+                                    Number.parseFloat(e.target.value) ?? null
                                   )
                                 }
                               />
