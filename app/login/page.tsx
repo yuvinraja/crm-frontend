@@ -41,7 +41,7 @@ export default function LoginPage() {
           </div>
           <div>
             <CardTitle className="text-2xl font-bold font-playfair">
-              Welcome to PulseFlow
+              Welcome to Mini CRM
             </CardTitle>
             <CardDescription className="text-base mt-2">
               Sign in to your CRM account to manage customers, campaigns, and

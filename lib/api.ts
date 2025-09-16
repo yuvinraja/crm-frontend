@@ -287,7 +287,7 @@ export const api = {
     getByCampaign: async (campaignId: string) => {
       const response = await apiRequest<
         ApiResponseWrapper<{ logs: CommunicationLog[]; stats: any }>
-      >(`communications/campaign/${campaignId}`);
+      >(`/communications/campaign/${campaignId}`);
       return unwrap(response, {
         logs: [],
         stats: { total: 0, sent: 0, failed: 0, pending: 0 },

@@ -66,7 +66,7 @@ export function Sidebar() {
               </div>
               <div>
                 <h1 className="text-xl font-bold text-sidebar-foreground font-playfair">
-                  PulseFlow
+                  Mini CRM
                 </h1>
                 <p className="text-xs text-muted-foreground">CRM Platform</p>
               </div>

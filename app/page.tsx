@@ -158,7 +158,7 @@ export default function DashboardPage() {
           <div className="flex flex-col space-y-4 md:flex-row md:items-center md:justify-between md:space-y-0">
             <div>
               <h1 className="text-3xl font-bold text-foreground font-playfair">
-                Welcome to PulseFlow CRM
+                Welcome to Mini CRM
               </h1>
               <p className="text-muted-foreground mt-2">
                 Manage your customers, campaigns, and segments all in one place
