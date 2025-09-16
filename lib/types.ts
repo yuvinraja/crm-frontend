@@ -156,16 +156,27 @@ export interface CampaignStats {
 }
 
 export interface DashboardStats {
+  // Core counts
   totalCustomers: number;
-  totalOrders: number;
-  totalSegments: number;
-  totalCampaigns: number;
+  activeSegments: number; // segments count
+  campaignsSent: number; // campaigns count
+  engagementRate: number; // derived percentage
+
+  // Recent activity (time window based)
   recentCustomers: number;
-  recentOrders: number;
   recentSegments: number;
   recentCampaigns: number;
-  totalRevenue: number;
-  avgOrderValue: number;
+
+  // Averages / derived
+  avgEngagementRate: number;
+
+  // Growth metrics (delta % vs previous period)
+  monthlyGrowth: {
+    customers: number;
+    segments: number;
+    campaigns: number;
+    engagement: number;
+  };
 }
 
 // Extended types for UI (combining data from multiple endpoints)

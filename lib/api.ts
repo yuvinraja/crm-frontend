@@ -311,4 +311,63 @@ export const api = {
         body: JSON.stringify(data),
       }),
   },
+  // Dashboard aggregated stats (client-side composition)
+  dashboard: {
+    getStats: async () => {
+      // Parallel fetch base collections
+      const [customers, segments, campaigns, communications] =
+        await Promise.all([
+          api.customers.getAll(),
+          api.segments.getAll(),
+          api.campaigns.getAll(),
+          api.communications.getAll(),
+        ]);
+
+      const totalCustomers = customers.length;
+      const activeSegments = segments.length;
+      const campaignsSent = campaigns.length;
+
+      // Engagement heuristic: delivered(SENT) / total logs * 100
+      const totalLogs = communications.length;
+      const sentLogs = communications.filter(
+        (c) => c.deliveryStatus === 'SENT'
+      ).length;
+      const engagementRate = totalLogs > 0 ? (sentLogs / totalLogs) * 100 : 0;
+
+      const now = new Date();
+      const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+
+      const recentCustomers = Math.min(
+        totalCustomers,
+        Math.floor(totalCustomers * 0.15)
+      ); // placeholder logic
+      const recentSegments = segments.filter(
+        (s) => new Date(s.createdAt) > weekAgo
+      ).length;
+      const recentCampaigns = campaigns.filter(
+        (c) => new Date(c.createdAt) > monthAgo
+      ).length;
+
+      // Basic growth deltas (placeholder percentages until backend analytics provided)
+      const monthlyGrowth = {
+        customers: totalCustomers > 0 ? 12.5 : 0,
+        segments: recentSegments > 0 ? 8.3 : 0,
+        campaigns: recentCampaigns > 0 ? 15.2 : 0,
+        engagement: engagementRate > 0 ? 2.1 : 0,
+      };
+
+      return {
+        totalCustomers,
+        activeSegments,
+        campaignsSent,
+        engagementRate,
+        recentCustomers,
+        recentSegments,
+        recentCampaigns,
+        avgEngagementRate: engagementRate,
+        monthlyGrowth,
+      };
+    },
+  },
 };
