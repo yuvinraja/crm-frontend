@@ -7,17 +7,25 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import { api } from '@/lib/api';
 import { User } from '@/lib/types';
 
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
+  isAuthenticated: boolean;
+  login: () => void;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
 }
 
+interface AuthResponse {
+  success: boolean;
+  user?: User;
+}
+
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -25,18 +33,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const fetchUser = async () => {
     try {
-      const userData = await api.auth.getUser();
-      setUser(userData);
+      const response = await fetch(`${API_BASE_URL}/auth/user`, {
+        credentials: 'include',
+      });
+
+      if (response.ok) {
+        const data: AuthResponse = await response.json();
+        // Only set user if success is true and user exists
+        if (data.success && data.user) {
+          setUser(data.user);
+        } else {
+          setUser(null);
+        }
+      } else {
+        setUser(null);
+      }
     } catch (error) {
+      console.error('Auth check failed:', error);
       setUser(null);
     } finally {
       setIsLoading(false);
     }
   };
 
+  const login = () => {
+    window.location.href = `${API_BASE_URL}/auth/google`;
+  };
+
   const logout = async () => {
     try {
-      await api.auth.logout();
+      await fetch(`${API_BASE_URL}/auth/logout`, {
+        method: 'GET',
+        credentials: 'include',
+      });
       setUser(null);
       window.location.href = '/login';
     } catch (error) {
@@ -52,8 +81,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     fetchUser();
   }, []);
 
+  const isAuthenticated = !!user;
+
   return (
-    <AuthContext.Provider value={{ user, isLoading, logout, refreshUser }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        isLoading,
+        isAuthenticated,
+        login,
+        logout,
+        refreshUser,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
@@ -65,4 +105,14 @@ export function useAuth() {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
+}
+
+export function useAuthUser() {
+  const { user } = useAuth();
+  return user;
+}
+
+export function useIsAuthenticated() {
+  const { isAuthenticated } = useAuth();
+  return isAuthenticated;
 }

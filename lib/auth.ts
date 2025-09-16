@@ -20,11 +20,14 @@ class AuthService {
       });
 
       if (response.ok) {
-        const user = await response.json();
-        return {
-          user: user || null,
-          isAuthenticated: !!user,
-        };
+        const data: { success: boolean; user?: User } = await response.json();
+        // Only consider authenticated if success is true and user exists
+        if (data.success && data.user) {
+          return {
+            user: data.user,
+            isAuthenticated: true,
+          };
+        }
       }
 
       return { user: null, isAuthenticated: false };
@@ -41,8 +44,11 @@ class AuthService {
       });
 
       if (response.ok) {
-        const user = await response.json();
-        return user || null;
+        const data: { success: boolean; user?: User } = await response.json();
+        // Only return user if success is true and user exists
+        if (data.success && data.user) {
+          return data.user;
+        }
       }
 
       return null;

@@ -1,34 +1,34 @@
-"use client"
+'use client';
 
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { BarChart3 } from "lucide-react"
-import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
-import { api } from "@/lib/api"
+import { Button } from '@/components/ui/button';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { BarChart3 } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/components/auth/auth-provider';
 
 export default function LoginPage() {
-  const [isLoading, setIsLoading] = useState(false)
-  const router = useRouter()
+  const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
+  const { isAuthenticated, login, isLoading: authLoading } = useAuth();
 
   // Check if user is already authenticated
   useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        await api.auth.getUser()
-        router.push("/")
-      } catch (error) {
-        // User not authenticated, stay on login page
-      }
+    if (!authLoading && isAuthenticated) {
+      router.push('/');
     }
-    checkAuth()
-  }, [router])
+  }, [isAuthenticated, authLoading, router]);
 
   const handleGoogleLogin = () => {
-    setIsLoading(true)
-    // Redirect to Google OAuth endpoint
-    window.location.href = `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000"}/auth/google`
-  }
+    setIsLoading(true);
+    login();
+  };
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
@@ -40,14 +40,21 @@ export default function LoginPage() {
             </div>
           </div>
           <div>
-            <CardTitle className="text-2xl font-bold font-playfair">Welcome to PulseFlow</CardTitle>
+            <CardTitle className="text-2xl font-bold font-playfair">
+              Welcome to PulseFlow
+            </CardTitle>
             <CardDescription className="text-base mt-2">
-              Sign in to your CRM account to manage customers, campaigns, and segments
+              Sign in to your CRM account to manage customers, campaigns, and
+              segments
             </CardDescription>
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
-          <Button onClick={handleGoogleLogin} disabled={isLoading} className="w-full h-12 text-base">
+          <Button
+            onClick={handleGoogleLogin}
+            disabled={isLoading}
+            className="w-full h-12 text-base"
+          >
             {isLoading ? (
               <div className="flex items-center space-x-2">
                 <div className="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
@@ -83,5 +90,5 @@ export default function LoginPage() {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }

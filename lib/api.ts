@@ -76,7 +76,20 @@ export async function apiRequest<T>(
 export const api = {
   // Auth endpoints
   auth: {
-    getUser: () => apiRequest<User>('/auth/user'),
+    getUser: async () => {
+      const response = await fetch(`${API_BASE_URL}/auth/user`, {
+        credentials: 'include',
+      });
+
+      if (response.ok) {
+        const data: { success: boolean; user?: User } = await response.json();
+        if (data.success && data.user) {
+          return data.user;
+        }
+      }
+
+      throw new ApiError(response.status, 'User not authenticated');
+    },
     logout: () => apiRequest<{ message: string }>('/auth/logout'),
   },
 
