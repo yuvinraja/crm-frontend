@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -66,9 +67,15 @@ export function CustomerList() {
 
   const fetchCustomers = async () => {
     try {
-      const data = await api.customers.getAll();
-      setCustomers(data);
-      setFilteredCustomers(data);
+      const response = await api.customers.getAll();
+
+      // The backend returns { success, data, pagination }
+      const customersArray = Array.isArray((response as any).data)
+        ? (response as any).data
+        : [];
+
+      setCustomers(customersArray);
+      setFilteredCustomers(customersArray);
     } catch (error) {
       toast({
         title: 'Failed to load customers',

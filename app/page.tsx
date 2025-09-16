@@ -1,11 +1,162 @@
-import { MainLayout } from "@/components/layout/main-layout"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Users, Target, MessageSquare, TrendingUp, Plus } from "lucide-react"
-import Link from "next/link"
-import { ProtectedRoute } from "@/components/auth/protected-route"
+'use client';
+
+import { MainLayout } from '@/components/layout/main-layout';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import {
+  Users,
+  Target,
+  MessageSquare,
+  TrendingUp,
+  Plus,
+  AlertCircle,
+  RefreshCw,
+} from 'lucide-react';
+import Link from 'next/link';
+import { ProtectedRoute } from '@/components/auth/protected-route';
+import { useDashboard } from '@/hooks/use-dashboard';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Skeleton } from '@/components/ui/skeleton';
+
+function DashboardStats() {
+  const { stats, isLoading, error } = useDashboard();
+
+  if (isLoading) {
+    return (
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+        {[...Array(4)].map((_, i) => (
+          <Card key={i}>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <Skeleton className="h-4 w-24" />
+              <Skeleton className="h-4 w-4" />
+            </CardHeader>
+            <CardContent>
+              <Skeleton className="h-8 w-16 mb-2" />
+              <Skeleton className="h-3 w-32" />
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-4">
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+          {[...Array(4)].map((_, i) => (
+            <Card key={i} className="opacity-50">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">No Data</CardTitle>
+                <AlertCircle className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">--</div>
+                <p className="text-xs text-muted-foreground">
+                  Data unavailable
+                </p>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (!stats) {
+    return null;
+  }
+
+  const formatPercentage = (value: number) => {
+    const sign = value >= 0 ? '+' : '';
+    return `${sign}${value.toFixed(1)}%`;
+  };
+
+  const formatGrowth = (current: number, growth: number) => {
+    if (growth === 0) return 'No change from last month';
+    const period = growth > 0 ? 'increase' : 'decrease';
+    return `${formatPercentage(Math.abs(growth))} ${period} from last month`;
+  };
+
+  return (
+    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">Total Customers</CardTitle>
+          <Users className="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">
+            {stats.totalCustomers.toLocaleString()}
+          </div>
+          <p className="text-xs text-muted-foreground">
+            {formatGrowth(stats.totalCustomers, stats.monthlyGrowth.customers)}
+          </p>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">Active Segments</CardTitle>
+          <Target className="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">{stats.activeSegments}</div>
+          <p className="text-xs text-muted-foreground">
+            {stats.recentSegments > 0
+              ? `+${stats.recentSegments} new this week`
+              : 'No new segments this week'}
+          </p>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">Campaigns Sent</CardTitle>
+          <MessageSquare className="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">{stats.campaignsSent}</div>
+          <p className="text-xs text-muted-foreground">
+            {stats.recentCampaigns > 0
+              ? `+${stats.recentCampaigns} this month`
+              : 'No campaigns this month'}
+          </p>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">Engagement Rate</CardTitle>
+          <TrendingUp className="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">
+            {stats.engagementRate.toFixed(1)}%
+          </div>
+          <p className="text-xs text-muted-foreground">
+            {formatGrowth(stats.engagementRate, stats.monthlyGrowth.engagement)}{' '}
+            from last week
+          </p>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
 
 export default function DashboardPage() {
+  const { refreshStats, isLoading: dashboardLoading } = useDashboard();
+
   return (
     <ProtectedRoute>
       <MainLayout>
@@ -13,12 +164,27 @@ export default function DashboardPage() {
           {/* Header */}
           <div className="flex flex-col space-y-4 md:flex-row md:items-center md:justify-between md:space-y-0">
             <div>
-              <h1 className="text-3xl font-bold text-foreground font-playfair">Welcome to PulseFlow CRM</h1>
+              <h1 className="text-3xl font-bold text-foreground font-playfair">
+                Welcome to PulseFlow CRM
+              </h1>
               <p className="text-muted-foreground mt-2">
                 Manage your customers, campaigns, and segments all in one place
               </p>
             </div>
             <div className="flex space-x-3">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={refreshStats}
+                disabled={dashboardLoading}
+              >
+                <RefreshCw
+                  className={`w-4 h-4 mr-2 ${
+                    dashboardLoading ? 'animate-spin' : ''
+                  }`}
+                />
+                Refresh
+              </Button>
               <Button asChild>
                 <Link href="/segments">
                   <Plus className="w-4 h-4 mr-2" />
@@ -35,51 +201,7 @@ export default function DashboardPage() {
           </div>
 
           {/* Stats Cards */}
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Customers</CardTitle>
-                <Users className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">1,234</div>
-                <p className="text-xs text-muted-foreground">+12% from last month</p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Active Segments</CardTitle>
-                <Target className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">23</div>
-                <p className="text-xs text-muted-foreground">+3 new this week</p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Campaigns Sent</CardTitle>
-                <MessageSquare className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">89</div>
-                <p className="text-xs text-muted-foreground">+7 this month</p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Engagement Rate</CardTitle>
-                <TrendingUp className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">68.2%</div>
-                <p className="text-xs text-muted-foreground">+2.1% from last week</p>
-              </CardContent>
-            </Card>
-          </div>
+          <DashboardStats />
 
           {/* Quick Actions */}
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -89,7 +211,10 @@ export default function DashboardPage() {
                   <Target className="w-5 h-5 mr-2 text-primary" />
                   Build Audience Segment
                 </CardTitle>
-                <CardDescription>Create targeted customer segments using advanced filtering rules</CardDescription>
+                <CardDescription>
+                  Create targeted customer segments using advanced filtering
+                  rules
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <Button asChild className="w-full">
@@ -104,7 +229,9 @@ export default function DashboardPage() {
                   <MessageSquare className="w-5 h-5 mr-2 text-primary" />
                   Launch Campaign
                 </CardTitle>
-                <CardDescription>Send targeted messages to your customer segments</CardDescription>
+                <CardDescription>
+                  Send targeted messages to your customer segments
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <Button asChild className="w-full">
@@ -119,7 +246,9 @@ export default function DashboardPage() {
                   <Users className="w-5 h-5 mr-2 text-primary" />
                   Manage Customers
                 </CardTitle>
-                <CardDescription>View and manage your customer database</CardDescription>
+                <CardDescription>
+                  View and manage your customer database
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <Button asChild className="w-full">
@@ -131,5 +260,5 @@ export default function DashboardPage() {
         </div>
       </MainLayout>
     </ProtectedRoute>
-  )
+  );
 }

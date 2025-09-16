@@ -146,6 +146,23 @@ export interface CampaignStats {
   pending: number;
 }
 
+export interface DashboardStats {
+  totalCustomers: number;
+  activeSegments: number;
+  campaignsSent: number;
+  engagementRate: number;
+  recentCustomers: number;
+  recentSegments: number;
+  recentCampaigns: number;
+  avgEngagementRate: number;
+  monthlyGrowth: {
+    customers: number;
+    segments: number;
+    campaigns: number;
+    engagement: number;
+  };
+}
+
 export interface CampaignHistory extends Campaign {
   stats: CampaignStats;
   segment: Segment;
