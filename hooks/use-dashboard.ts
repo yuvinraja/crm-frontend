@@ -1,9 +1,8 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { api } from '@/lib/api';
-import { DashboardStats } from '@/lib/types';
+import { DashboardStats, Customer, Segment, Campaign } from '@/lib/types';
 import { useAuth } from '@/components/auth/auth-provider';
 
 interface UseDashboardReturn {
@@ -27,18 +26,24 @@ export function useDashboard(): UseDashboardReturn {
     return null;
   };
 
-  const fetchStats = async () => {
-    if (!isAuthenticated) return; // do not fetch until logged in
+  const fetchStats = useCallback(async () => {
+    if (!isAuthenticated) return;
 
     try {
       setIsLoading(true);
       setError(null);
 
-      const [customers, segments, campaigns] = await Promise.all([
-        api.customers.getAll(),
-        api.segments.getAll(),
-        api.campaigns.getAll(),
-      ]);
+      const [customersResponse, segmentsResponse, campaignsResponse] =
+        await Promise.all([
+          api.customers.getAll(),
+          api.segments.getAll(),
+          api.campaigns.getAll(),
+        ]);
+
+      // Extract the data arrays from the response objects
+      const customers: Customer[] = customersResponse.data || [];
+      const segments: Segment[] = segmentsResponse.data || [];
+      const campaigns: Campaign[] = campaignsResponse.data || [];
 
       const totalCustomers = customers.length;
       const activeSegments = segments.length;
@@ -49,13 +54,13 @@ export function useDashboard(): UseDashboardReturn {
       const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
       const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
 
-      const recentSegments = segments.filter((s) => {
-        const d = safeDate((s as any).createdAt);
+      const recentSegments = segments.filter((s: Segment) => {
+        const d = safeDate(s.createdAt);
         return d && d > weekAgo;
       }).length;
 
-      const recentCampaigns = campaigns.filter((c) => {
-        const d = safeDate((c as any).createdAt);
+      const recentCampaigns = campaigns.filter((c: Campaign) => {
+        const d = safeDate(c.createdAt);
         return d && d > monthAgo;
       }).length;
 
@@ -97,13 +102,13 @@ export function useDashboard(): UseDashboardReturn {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [isAuthenticated]);
 
   useEffect(() => {
     if (!authLoading && isAuthenticated) {
       fetchStats();
     }
-  }, [authLoading, isAuthenticated]);
+  }, [authLoading, isAuthenticated, fetchStats]);
 
   return {
     stats,

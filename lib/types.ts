@@ -172,3 +172,15 @@ export interface CampaignHistory extends Campaign {
   failed: number;
   segmentName?: string;
 }
+
+export interface ApiResponseWrapper<T> {
+  success: boolean;
+  data: T;
+  pagination?: {
+    currentPage: number;
+    totalPages: number;
+    totalItems: number;
+    hasNext: boolean;
+  };
+  message?: string;
+}

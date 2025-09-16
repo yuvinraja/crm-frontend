@@ -1,4 +1,3 @@
-// API configuration and utilities
 import {
   User,
   Customer,
@@ -16,6 +15,7 @@ import {
   UpdateCampaignRequest,
   CampaignStats,
   CampaignHistory,
+  ApiResponseWrapper,
 } from './types';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
@@ -95,8 +95,8 @@ export const api = {
 
   // Customer endpoints
   customers: {
-    getAll: () => apiRequest<Customer[]>('/customers'),
-    getById: (id: string) => apiRequest<Customer>(`/customers/${id}`),
+    getAll: () => apiRequest<ApiResponseWrapper<Customer[]>>('/customers'),
+    getById: (id: string) => apiRequest<ApiResponseWrapper<Customer>>(`/customers/${id}`),
     create: (data: CreateCustomerRequest) =>
       apiRequest<Customer>('/customers', {
         method: 'POST',
@@ -115,8 +115,8 @@ export const api = {
 
   // Segment endpoints
   segments: {
-    getAll: () => apiRequest<Segment[]>('/segments'),
-    getById: (id: string) => apiRequest<Segment>(`/segments/${id}`),
+    getAll: () => apiRequest<ApiResponseWrapper<Segment[]>>('/segments'),
+    getById: (id: string) => apiRequest<ApiResponseWrapper<Segment[]>>(`/segments/${id}`),
     create: (data: CreateSegmentRequest) =>
       apiRequest<Segment>('/segments', {
         method: 'POST',
@@ -137,8 +137,8 @@ export const api = {
 
   // Campaign endpoints
   campaigns: {
-    getAll: () => apiRequest<Campaign[]>('/campaigns'),
-    getById: (id: string) => apiRequest<Campaign>(`/campaigns/${id}`),
+    getAll: () => apiRequest<ApiResponseWrapper<Campaign[]>>('/campaigns'),
+    getById: (id: string) => apiRequest<ApiResponseWrapper<Campaign[]>>(`/campaigns/${id}`),
     getHistory: () => apiRequest<CampaignHistory[]>('/campaigns/history'),
     getStats: (id: string) =>
       apiRequest<CampaignStats>(`/campaigns/${id}/stats`),
