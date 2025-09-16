@@ -48,15 +48,11 @@ export function OrderList() {
   const { toast } = useToast();
 
   const fetchData = useCallback(async () => {
-    console.log('OrderList: Fetching data...');
     try {
       const [ordersResponse, customersResponse] = await Promise.all([
         api.orders.getAll(),
         api.customers.getAll(),
       ]);
-
-      console.log('OrderList: Raw orders response:', ordersResponse);
-      console.log('OrderList: Raw customers response:', customersResponse);
 
       // Handle different response formats
       const ordersData = Array.isArray(ordersResponse)
@@ -71,9 +67,6 @@ export function OrderList() {
         ? (customersResponse as { data: Customer[] }).data
         : [];
 
-      console.log('OrderList: Processed orders data:', ordersData);
-      console.log('OrderList: Processed customers data:', customersData);
-
       // Sort orders by most recent first
       const sortedOrders = ordersData.sort(
         (a: Order, b: Order) =>
@@ -84,7 +77,6 @@ export function OrderList() {
       setFilteredOrders(sortedOrders);
       setCustomers(customersData);
 
-      console.log('OrderList: Successfully set orders:', sortedOrders.length);
     } catch (error) {
       console.error('Failed to fetch orders:', error);
       toast({
@@ -148,15 +140,6 @@ export function OrderList() {
       return { label: 'This Month', color: 'bg-yellow-100 text-yellow-800' };
     return { label: 'Older', color: 'bg-gray-100 text-gray-800' };
   };
-
-  console.log(
-    'OrderList: Rendering with orders:',
-    orders.length,
-    'filtered:',
-    filteredOrders.length,
-    'isLoading:',
-    isLoading
-  );
 
   if (isLoading) {
     return (

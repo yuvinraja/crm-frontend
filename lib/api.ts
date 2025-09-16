@@ -16,7 +16,6 @@ import {
   UpdateCampaignRequest,
   CampaignStats,
   CampaignHistory,
-  DashboardStats,
 } from './types';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
@@ -92,11 +91,6 @@ export const api = {
       throw new ApiError(response.status, 'User not authenticated');
     },
     logout: () => apiRequest<{ message: string }>('/auth/logout'),
-  },
-
-  // Dashboard endpoints
-  dashboard: {
-    getStats: () => apiRequest<DashboardStats>('/dashboard/stats'),
   },
 
   // Customer endpoints

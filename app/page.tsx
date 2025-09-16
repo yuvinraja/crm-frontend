@@ -23,10 +23,17 @@ import { ProtectedRoute } from '@/components/auth/protected-route';
 import { useDashboard } from '@/hooks/use-dashboard';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
+import { DashboardStats as StatsType } from '@/lib/types';
 
-function DashboardStats() {
-  const { stats, isLoading, error } = useDashboard();
-
+function DashboardStats({
+  stats,
+  isLoading,
+  error,
+}: {
+  stats: StatsType | null;
+  isLoading: boolean;
+  error: string | null;
+}) {
   if (isLoading) {
     return (
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
@@ -53,29 +60,11 @@ function DashboardStats() {
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>{error}</AlertDescription>
         </Alert>
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-          {[...Array(4)].map((_, i) => (
-            <Card key={i} className="opacity-50">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">No Data</CardTitle>
-                <AlertCircle className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">--</div>
-                <p className="text-xs text-muted-foreground">
-                  Data unavailable
-                </p>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
       </div>
     );
   }
 
-  if (!stats) {
-    return null;
-  }
+  if (!stats) return null;
 
   const formatPercentage = (value: number) => {
     const sign = value >= 0 ? '+' : '';
@@ -90,6 +79,7 @@ function DashboardStats() {
 
   return (
     <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+      {/* Total Customers */}
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">Total Customers</CardTitle>
@@ -105,6 +95,7 @@ function DashboardStats() {
         </CardContent>
       </Card>
 
+      {/* Active Segments */}
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">Active Segments</CardTitle>
@@ -120,6 +111,7 @@ function DashboardStats() {
         </CardContent>
       </Card>
 
+      {/* Campaigns Sent */}
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">Campaigns Sent</CardTitle>
@@ -135,6 +127,7 @@ function DashboardStats() {
         </CardContent>
       </Card>
 
+      {/* Engagement Rate */}
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">Engagement Rate</CardTitle>
@@ -155,7 +148,7 @@ function DashboardStats() {
 }
 
 export default function DashboardPage() {
-  const { refreshStats, isLoading: dashboardLoading } = useDashboard();
+  const { stats, isLoading, error, refreshStats } = useDashboard();
 
   return (
     <ProtectedRoute>
@@ -176,12 +169,10 @@ export default function DashboardPage() {
                 variant="outline"
                 size="sm"
                 onClick={refreshStats}
-                disabled={dashboardLoading}
+                disabled={isLoading}
               >
                 <RefreshCw
-                  className={`w-4 h-4 mr-2 ${
-                    dashboardLoading ? 'animate-spin' : ''
-                  }`}
+                  className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`}
                 />
                 Refresh
               </Button>
@@ -201,10 +192,11 @@ export default function DashboardPage() {
           </div>
 
           {/* Stats Cards */}
-          <DashboardStats />
+          <DashboardStats stats={stats} isLoading={isLoading} error={error} />
 
           {/* Quick Actions */}
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {/* Segments */}
             <Card className="hover:shadow-lg transition-shadow cursor-pointer">
               <CardHeader>
                 <CardTitle className="flex items-center">
@@ -223,6 +215,7 @@ export default function DashboardPage() {
               </CardContent>
             </Card>
 
+            {/* Campaigns */}
             <Card className="hover:shadow-lg transition-shadow cursor-pointer">
               <CardHeader>
                 <CardTitle className="flex items-center">
@@ -240,6 +233,7 @@ export default function DashboardPage() {
               </CardContent>
             </Card>
 
+            {/* Customers */}
             <Card className="hover:shadow-lg transition-shadow cursor-pointer">
               <CardHeader>
                 <CardTitle className="flex items-center">

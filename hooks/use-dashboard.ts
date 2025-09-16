@@ -1,8 +1,10 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
 import { useState, useEffect } from 'react';
 import { api } from '@/lib/api';
 import { DashboardStats } from '@/lib/types';
+import { useAuth } from '@/components/auth/auth-provider';
 
 interface UseDashboardReturn {
   stats: DashboardStats | null;
@@ -12,60 +14,57 @@ interface UseDashboardReturn {
 }
 
 export function useDashboard(): UseDashboardReturn {
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const safeDate = (value: unknown) => {
+    if (typeof value === 'string' || typeof value === 'number') {
+      const d = new Date(value);
+      return isNaN(d.getTime()) ? null : d;
+    }
+    return null;
+  };
+
   const fetchStats = async () => {
+    if (!isAuthenticated) return; // do not fetch until logged in
+
     try {
       setIsLoading(true);
       setError(null);
 
-      // Try to get dashboard stats from the dedicated endpoint
-      try {
-        const dashboardStats = await api.dashboard.getStats();
-        setStats(dashboardStats);
-        return;
-      } catch {
-        console.log(
-          'Dashboard endpoint not available, calculating from individual endpoints'
-        );
-      }
-
-      // Fallback: Calculate stats from individual API endpoints
       const [customers, segments, campaigns] = await Promise.all([
-        api.customers.getAll().catch(() => []),
-        api.segments.getAll().catch(() => []),
-        api.campaigns.getAll().catch(() => []),
+        api.customers.getAll(),
+        api.segments.getAll(),
+        api.campaigns.getAll(),
       ]);
 
-      // Calculate basic stats from the data
       const totalCustomers = customers.length;
       const activeSegments = segments.length;
       const campaignsSent = campaigns.length;
-
-      // Calculate engagement rate (mock calculation for now)
       const engagementRate = campaigns.length > 0 ? 65.8 : 0;
 
-      // Recent activity (last 7 days for segments, last 30 days for campaigns)
       const now = new Date();
       const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
       const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
 
-      const recentSegments = segments.filter(
-        (s) => new Date(s.createdAt) > weekAgo
-      ).length;
+      const recentSegments = segments.filter((s) => {
+        const d = safeDate((s as any).createdAt);
+        return d && d > weekAgo;
+      }).length;
 
-      const recentCampaigns = campaigns.filter(
-        (c) => new Date(c.createdAt) > monthAgo
-      ).length;
+      const recentCampaigns = campaigns.filter((c) => {
+        const d = safeDate((c as any).createdAt);
+        return d && d > monthAgo;
+      }).length;
 
       setStats({
         totalCustomers,
         activeSegments,
         campaignsSent,
         engagementRate,
-        recentCustomers: Math.floor(totalCustomers * 0.15), // Estimate 15% are recent
+        recentCustomers: Math.floor(totalCustomers * 0.15),
         recentSegments,
         recentCampaigns,
         avgEngagementRate: engagementRate,
@@ -79,7 +78,6 @@ export function useDashboard(): UseDashboardReturn {
     } catch (err) {
       console.error('Failed to fetch dashboard stats:', err);
       setError('Failed to load dashboard data');
-      // Set zero data as last resort
       setStats({
         totalCustomers: 0,
         activeSegments: 0,
@@ -101,18 +99,16 @@ export function useDashboard(): UseDashboardReturn {
     }
   };
 
-  const refreshStats = async () => {
-    await fetchStats();
-  };
-
   useEffect(() => {
-    fetchStats();
-  }, []);
+    if (!authLoading && isAuthenticated) {
+      fetchStats();
+    }
+  }, [authLoading, isAuthenticated]);
 
   return {
     stats,
-    isLoading,
+    isLoading: isLoading || authLoading,
     error,
-    refreshStats,
+    refreshStats: fetchStats,
   };
 }
