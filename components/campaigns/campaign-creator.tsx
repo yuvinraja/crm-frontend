@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -64,19 +65,26 @@ export function CampaignCreator() {
   }, [campaign.segmentId, segments]);
 
   const fetchSegments = async () => {
-    try {
-      const data = await api.segments.getAll();
-      setSegments(data);
-    } catch (error) {
-      toast({
-        title: 'Failed to load segments',
-        description: 'Unable to fetch segments. Please try again.',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsLoadingSegments(false);
-    }
-  };
+  try {
+    const response = await api.segments.getAll();
+
+    // unwrap backend response
+    const segmentsArray = Array.isArray((response as any).data)
+      ? (response as any).data
+      : [];
+
+    setSegments(segmentsArray);
+  } catch (error) {
+    toast({
+      title: 'Failed to load segments',
+      description: 'Unable to fetch segments. Please try again.',
+      variant: 'destructive',
+    });
+  } finally {
+    setIsLoadingSegments(false);
+  }
+};
+
 
   const createCampaign = async () => {
     if (!campaign.name || !campaign.segmentId || !campaign.message) {

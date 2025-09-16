@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -40,20 +41,27 @@ export function SegmentList() {
     fetchSegments();
   }, []);
 
-  const fetchSegments = async () => {
-    try {
-      const data = await api.segments.getAll();
-      setSegments(data);
-    } catch (error) {
-      toast({
-        title: 'Failed to load segments',
-        description: 'Unable to fetch segments. Please try again.',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
+const fetchSegments = async () => {
+  try {
+    const response = await api.segments.getAll();
+
+    // unwrap backend response
+    const segmentsArray = Array.isArray((response as any).data)
+      ? (response as any).data
+      : [];
+
+    setSegments(segmentsArray);
+  } catch (error) {
+    toast({
+      title: 'Failed to load segments',
+      description: 'Unable to fetch segments. Please try again.',
+      variant: 'destructive',
+    });
+  } finally {
+    setIsLoading(false);
+  }
+};
+
 
   const deleteSegment = async (id: string) => {
     try {

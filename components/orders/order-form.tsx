@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -42,14 +43,20 @@ export function OrderForm({ customerId, onSuccess, onCancel }: OrderFormProps) {
     fetchCustomers();
   }, []);
 
-  const fetchCustomers = async () => {
+const fetchCustomers = async () => {
     try {
-      const data = await api.customers.getAll();
-      setCustomers(data);
+      const response = await api.customers.getAll();
+
+      // The backend returns { success, data, pagination }
+      const customersArray = Array.isArray((response as any).data)
+        ? (response as any).data
+        : [];
+
+      setCustomers(customersArray);
     } catch (error) {
       toast({
         title: 'Failed to load customers',
-        description: 'Unable to fetch customers list.',
+        description: 'Unable to fetch customers. Please try again.',
         variant: 'destructive',
       });
     } finally {
