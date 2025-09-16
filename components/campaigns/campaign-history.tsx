@@ -37,28 +37,33 @@ export function CampaignHistory() {
   const { toast } = useToast();
 
   useEffect(() => {
-    fetchCampaignHistory();
-  }, []);
+    const fetchData = async () => {
+      try {
+        const response = await api.campaigns.getHistory();
+        // Handle both direct array and wrapper response
+        const data = Array.isArray(response)
+          ? response
+          : (response as { data?: CampaignHistoryType[] }).data || [];
+        // Sort by most recent first
+        const sortedData = data.sort(
+          (a: CampaignHistoryType, b: CampaignHistoryType) =>
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        );
+        setCampaigns(sortedData);
+      } catch (error) {
+        console.error('Failed to fetch campaign history:', error);
+        toast({
+          title: 'Failed to load campaigns',
+          description: 'Unable to fetch campaign history. Please try again.',
+          variant: 'destructive',
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-  const fetchCampaignHistory = async () => {
-    try {
-      const data = await api.campaigns.getHistory();
-      // Sort by most recent first
-      const sortedData = data.sort(
-        (a: CampaignHistoryType, b: CampaignHistoryType) =>
-          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-      );
-      setCampaigns(sortedData);
-    } catch (error) {
-      toast({
-        title: 'Failed to load campaigns',
-        description: 'Unable to fetch campaign history. Please try again.',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    fetchData();
+  }, [toast]);
 
   if (isLoading) {
     return (
@@ -119,9 +124,12 @@ export function CampaignHistory() {
             </TableHeader>
             <TableBody>
               {campaigns.map((campaign) => {
+                const audienceSize = campaign.audienceSize || 0;
+                const sent = campaign.sent || campaign.stats?.sent || 0;
+                const failed = campaign.failed || campaign.stats?.failed || 0;
                 const successRate =
-                  campaign.audienceSize > 0
-                    ? ((campaign.sent / campaign.audienceSize) * 100).toFixed(1)
+                  audienceSize > 0
+                    ? ((sent / audienceSize) * 100).toFixed(1)
                     : '0';
 
                 return (
@@ -132,9 +140,10 @@ export function CampaignHistory() {
                     <TableCell>
                       <div>
                         <div className="font-medium">{campaign.name}</div>
-                        {campaign.segmentName && (
+                        {(campaign.segmentName || campaign.segment?.name) && (
                           <div className="text-sm text-muted-foreground">
-                            Target: {campaign.segmentName}
+                            Target:{' '}
+                            {campaign.segmentName || campaign.segment?.name}
                           </div>
                         )}
                       </div>
@@ -150,30 +159,26 @@ export function CampaignHistory() {
                     <TableCell>
                       <div className="flex items-center space-x-2">
                         <Users className="w-4 h-4 text-muted-foreground" />
-                        <span>{campaign.audienceSize}</span>
+                        <span>{audienceSize}</span>
                       </div>
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center space-x-2">
                         <CheckCircle className="w-4 h-4 text-green-500" />
-                        <span>{campaign.sent}</span>
+                        <span>{sent}</span>
                       </div>
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center space-x-2">
                         <XCircle className="w-4 h-4 text-red-500" />
-                        <span>{campaign.failed}</span>
+                        <span>{failed}</span>
                       </div>
                     </TableCell>
                     <TableCell>
                       <Badge
-                        variant={
-                          campaign.failed === 0 ? 'default' : 'secondary'
-                        }
+                        variant={failed === 0 ? 'default' : 'secondary'}
                         className={
-                          campaign.failed === 0
-                            ? 'bg-green-100 text-green-800'
-                            : ''
+                          failed === 0 ? 'bg-green-100 text-green-800' : ''
                         }
                       >
                         {successRate}% success

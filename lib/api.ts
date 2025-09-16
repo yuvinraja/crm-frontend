@@ -96,7 +96,8 @@ export const api = {
   // Customer endpoints
   customers: {
     getAll: () => apiRequest<ApiResponseWrapper<Customer[]>>('/customers'),
-    getById: (id: string) => apiRequest<ApiResponseWrapper<Customer>>(`/customers/${id}`),
+    getById: (id: string) =>
+      apiRequest<ApiResponseWrapper<Customer>>(`/customers/${id}`),
     create: (data: CreateCustomerRequest) =>
       apiRequest<Customer>('/customers', {
         method: 'POST',
@@ -116,7 +117,8 @@ export const api = {
   // Segment endpoints
   segments: {
     getAll: () => apiRequest<ApiResponseWrapper<Segment[]>>('/segments'),
-    getById: (id: string) => apiRequest<ApiResponseWrapper<Segment[]>>(`/segments/${id}`),
+    getById: (id: string) =>
+      apiRequest<ApiResponseWrapper<Segment[]>>(`/segments/${id}`),
     create: (data: CreateSegmentRequest) =>
       apiRequest<Segment>('/segments', {
         method: 'POST',
@@ -132,13 +134,22 @@ export const api = {
         method: 'DELETE',
       }),
     getAudience: (id: string) =>
-      apiRequest<Customer[]>(`/segments/${id}/audience`),
+      apiRequest<Customer[]>(`/segments/${id}/customers`),
+    preview: (data: CreateSegmentRequest) =>
+      apiRequest<{ audienceSize: number; sampleCustomers: Customer[] }>(
+        '/segments/preview',
+        {
+          method: 'POST',
+          body: JSON.stringify(data),
+        }
+      ),
   },
 
   // Campaign endpoints
   campaigns: {
     getAll: () => apiRequest<ApiResponseWrapper<Campaign[]>>('/campaigns'),
-    getById: (id: string) => apiRequest<ApiResponseWrapper<Campaign[]>>(`/campaigns/${id}`),
+    getById: (id: string) =>
+      apiRequest<ApiResponseWrapper<Campaign[]>>(`/campaigns/${id}`),
     getHistory: () => apiRequest<CampaignHistory[]>('/campaigns/history'),
     getStats: (id: string) =>
       apiRequest<CampaignStats>(`/campaigns/${id}/stats`),

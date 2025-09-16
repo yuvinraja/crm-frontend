@@ -34,15 +34,19 @@ interface SegmentData {
 }
 
 const FIELD_OPTIONS = [
-  { value: 'spend', label: 'Total Spending', type: 'number' },
-  { value: 'visits', label: 'Number of Visits', type: 'number' },
-  { value: 'inactiveDays', label: 'Days Since Last Visit', type: 'number' },
+  { value: 'totalSpending', label: 'Total Spending', type: 'number' },
+  { value: 'lastVisit', label: 'Last Visit Date', type: 'date' },
+  { value: 'name', label: 'Customer Name', type: 'text' },
+  { value: 'email', label: 'Email Address', type: 'text' },
 ];
 
 const OPERATOR_OPTIONS = [
   { value: '>', label: 'Greater than' },
   { value: '<', label: 'Less than' },
+  { value: '>=', label: 'Greater than or equal' },
+  { value: '<=', label: 'Less than or equal' },
   { value: '=', label: 'Equal to' },
+  { value: '!=', label: 'Not equal to' },
 ];
 
 export function SegmentBuilder() {
@@ -128,15 +132,19 @@ export function SegmentBuilder() {
 
     setIsPreviewLoading(true);
     try {
-      // First save the segment temporarily to get an ID for preview
-      const tempSegment = await api.segments.create(segment);
-      const audience = await api.segments.getAudience(tempSegment._id);
-      setAudienceSize(audience.length);
+      const previewData = {
+        name: segment.name, // Include name for preview
+        conditions: segment.conditions,
+        logic: segment.logic,
+      };
+      const result = await api.segments.preview(previewData);
+      setAudienceSize(result.audienceSize);
       toast({
         title: 'Audience Preview',
-        description: `This segment would target ${audience.length} customers.`,
+        description: `This segment would target ${result.audienceSize} customers.`,
       });
     } catch (error) {
+      console.error('Preview failed:', error);
       toast({
         title: 'Preview failed',
         description: 'Unable to preview audience. Please try again.',
@@ -167,8 +175,10 @@ export function SegmentBuilder() {
         title: 'Segment created',
         description: 'Your customer segment has been saved successfully.',
       });
-      router.push('/segments');
+      // Redirect to campaigns page to show history of campaigns
+      router.push('/campaigns');
     } catch (error) {
+      console.error('Save failed:', error);
       toast({
         title: 'Save failed',
         description: 'Unable to save segment. Please try again.',
@@ -329,18 +339,58 @@ export function SegmentBuilder() {
                         <Label className="text-xs text-muted-foreground">
                           Value
                         </Label>
-                        <Input
-                          type="number"
-                          placeholder="Enter value"
-                          value={condition.value}
-                          onChange={(e) =>
-                            updateCondition(
-                              index,
-                              'value',
-                              Number.parseFloat(e.target.value) || ''
-                            )
+                        {(() => {
+                          const fieldType = FIELD_OPTIONS.find(
+                            (f) => f.value === condition.field
+                          )?.type;
+
+                          if (fieldType === 'date') {
+                            return (
+                              <Input
+                                type="date"
+                                placeholder="Select date"
+                                value={condition.value}
+                                onChange={(e) =>
+                                  updateCondition(
+                                    index,
+                                    'value',
+                                    e.target.value
+                                  )
+                                }
+                              />
+                            );
+                          } else if (fieldType === 'number') {
+                            return (
+                              <Input
+                                type="number"
+                                placeholder="Enter value"
+                                value={condition.value}
+                                onChange={(e) =>
+                                  updateCondition(
+                                    index,
+                                    'value',
+                                    Number.parseFloat(e.target.value) || ''
+                                  )
+                                }
+                              />
+                            );
+                          } else {
+                            return (
+                              <Input
+                                type="text"
+                                placeholder="Enter value"
+                                value={condition.value}
+                                onChange={(e) =>
+                                  updateCondition(
+                                    index,
+                                    'value',
+                                    e.target.value
+                                  )
+                                }
+                              />
+                            );
                           }
-                        />
+                        })()}
                       </div>
                     </div>
 
