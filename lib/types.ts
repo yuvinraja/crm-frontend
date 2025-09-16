@@ -211,3 +211,24 @@ export interface SegmentPreviewResponse {
   audienceSize: number;
   sampleCustomers: Customer[];
 }
+
+export interface CampaignHistory {
+  _id: string;
+  name: string;
+  segmentId: string;
+  segmentName?: string; // Optional, if populated
+  segment?: Segment; // Optional, if populated
+  audienceSize?: number; // Optional, if calculated
+  sent?: number; // Optional, if calculated
+  failed?: number; // Optional, if calculated
+  stats?: {
+    sent: number;
+    failed: number;
+    pending: number;
+  }; // Optional, if fetched
+  createdAt: string;
+  updatedAt: string;
+  createdBy?: string;
+  message: string;
+  // Add other fields as necessary
+}

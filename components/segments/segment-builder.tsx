@@ -21,7 +21,7 @@ import {
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Plus, X, Eye, Save, ArrowLeft, Sparkles } from 'lucide-react';
+import { Plus, X, Eye, Save, ArrowLeft, Sparkles, Send } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
 import { SegmentCondition, CreateSegmentRequest } from '@/lib/types';
@@ -65,6 +65,13 @@ export function SegmentBuilder() {
   const [audienceSize, setAudienceSize] = useState<number | null>(null);
   const [isPreviewLoading, setIsPreviewLoading] = useState(false);
   const [isAIGenerated, setIsAIGenerated] = useState(false);
+  // Auto campaign creation state
+  const [createCampaign, setCreateCampaign] = useState(false);
+  const [campaignName, setCampaignName] = useState('');
+  const [campaignMessage, setCampaignMessage] = useState(
+    'Hi {{name}}, here’s 10% off on your next order!'
+  );
+  const [isCampaignCreating, setIsCampaignCreating] = useState(false);
   const { toast } = useToast();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -195,12 +202,63 @@ export function SegmentBuilder() {
           value: c.value as SegmentCondition['value'],
         })),
       };
-      await api.segments.create(payload);
+      const newSegment = await api.segments.create(payload);
       toast({
         title: 'Segment created',
         description: 'Your customer segment has been saved successfully.',
       });
-      // Redirect to campaigns page to show history of campaigns
+
+      // If auto campaign creation enabled and we have a new segment id
+      if (
+        createCampaign &&
+        newSegment &&
+        (newSegment as { _id?: string })._id
+      ) {
+        if (!campaignName || !campaignMessage) {
+          toast({
+            title: 'Campaign details missing',
+            description:
+              'Provide a campaign name and message or disable auto campaign.',
+            variant: 'destructive',
+          });
+          router.push('/campaigns');
+          return;
+        }
+        try {
+          setIsCampaignCreating(true);
+          const segmentId = (newSegment as { _id?: string })._id || '';
+          const createdCampaign = await api.campaigns.create({
+            name: campaignName,
+            segmentId,
+            message: campaignMessage,
+          });
+          toast({
+            title: 'Campaign created',
+            description: 'Campaign launched for this new segment.',
+          });
+          if (createdCampaign && (createdCampaign as { _id?: string })._id) {
+            router.push(
+              `/campaigns/${(createdCampaign as { _id?: string })._id}`
+            );
+          } else {
+            router.push('/campaigns');
+          }
+          return; // exit early after redirect
+        } catch {
+          toast({
+            title: 'Campaign creation failed',
+            description:
+              'Segment saved but campaign could not be created. You can create it manually later.',
+            variant: 'destructive',
+          });
+          router.push('/campaigns');
+          return;
+        } finally {
+          setIsCampaignCreating(false);
+        }
+      }
+
+      // Default redirect when not creating campaign
       router.push('/campaigns');
     } catch {
       toast({
@@ -541,20 +599,81 @@ export function SegmentBuilder() {
                 </div>
               )}
               <Separator />
+              {/* Auto Campaign Creation Toggle */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label className="text-xs text-muted-foreground">
+                    Auto-create Campaign
+                  </Label>
+                  <button
+                    type="button"
+                    onClick={() => setCreateCampaign((p) => !p)}
+                    className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${
+                      createCampaign ? 'bg-primary' : 'bg-muted'
+                    }`}
+                    aria-pressed={createCampaign}
+                  >
+                    <span
+                      className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition ${
+                        createCampaign ? 'translate-x-5' : 'translate-x-0'
+                      }`}
+                    />
+                  </button>
+                </div>
+                {createCampaign && (
+                  <div className="space-y-3 p-3 border rounded-lg bg-muted/50">
+                    <div className="space-y-1">
+                      <Label className="text-xs text-muted-foreground">
+                        Campaign Name
+                      </Label>
+                      <Input
+                        placeholder="e.g., New Segment Launch Promo"
+                        value={campaignName}
+                        onChange={(e) => setCampaignName(e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs text-muted-foreground">
+                        Message Template
+                      </Label>
+                      <textarea
+                        className="w-full text-sm p-2 border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-primary"
+                        rows={4}
+                        value={campaignMessage}
+                        onChange={(e) => setCampaignMessage(e.target.value)}
+                      />
+                      <p className="text-[10px] text-muted-foreground">
+                        Use {'{'}
+                        {'{'}name{'}'}
+                        {'}'} placeholder for personalization.
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+              <Separator />
               <Button
                 onClick={saveSegment}
-                disabled={isLoading}
+                disabled={isLoading || isCampaignCreating}
                 className="w-full"
               >
-                {isLoading ? (
+                {isLoading || isCampaignCreating ? (
                   <div className="flex items-center space-x-2">
                     <div className="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
-                    <span>Saving...</span>
+                    <span>
+                      {isCampaignCreating
+                        ? 'Creating Campaign...'
+                        : 'Saving...'}
+                    </span>
                   </div>
                 ) : (
                   <>
-                    <Save className="w-4 h-4 mr-2" />
-                    Save Segment
+                    {createCampaign ? (
+                      <Send className="w-4 h-4 mr-2" />
+                    ) : (
+                      <Save className="w-4 h-4 mr-2" />
+                    )}
+                    {createCampaign ? 'Save & Launch Campaign' : 'Save Segment'}
                   </>
                 )}
               </Button>

@@ -258,7 +258,8 @@ export const api = {
     // Derive stats client-side from communications logs if backend lacks /campaigns/:id/stats
     getStats: async (id: string) => {
       // Fetch communications for campaign and compute aggregates
-      const logs = await api.communications.getByCampaign(id);
+      const response = await api.communications.getByCampaign(id);
+      const logs = response.logs;
       const sent = logs.filter((l) => l.deliveryStatus === 'SENT').length;
       const failed = logs.filter((l) => l.deliveryStatus === 'FAILED').length;
       const pending = logs.filter((l) => l.deliveryStatus === 'PENDING').length;
@@ -283,13 +284,16 @@ export const api = {
         ),
         {} as CommunicationLog
       ),
-    getByCampaign: async (campaignId: string) =>
-      unwrap(
-        await apiRequest<ApiResponseWrapper<CommunicationLog[]>>(
-          `/communications/campaign/${campaignId}`
-        ),
-        []
-      ),
+    getByCampaign: async (campaignId: string) => {
+      const response = await apiRequest<
+        ApiResponseWrapper<{ logs: CommunicationLog[]; stats: any }>
+      >(`communications/campaign/${campaignId}`);
+      return unwrap(response, {
+        logs: [],
+        stats: { total: 0, sent: 0, failed: 0, pending: 0 },
+      });
+    },
+
     updateStatus: async (id: string, status: 'PENDING' | 'SENT' | 'FAILED') =>
       unwrap(
         await apiRequest<ApiResponseWrapper<CommunicationLog>>(

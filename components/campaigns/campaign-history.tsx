@@ -39,16 +39,14 @@ export function CampaignHistory() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await api.campaigns.getHistory();
-        // Handle both direct array and wrapper response
-        const data = Array.isArray(response)
-          ? response
-          : (response as { data?: CampaignHistoryType[] }).data || [];
+        const campaigns = await api.campaigns.getHistory();
+
         // Sort by most recent first
-        const sortedData = data.sort(
+        const sortedData = campaigns.sort(
           (a: CampaignHistoryType, b: CampaignHistoryType) =>
             new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
         );
+
         setCampaigns(sortedData);
       } catch (error) {
         console.error('Failed to fetch campaign history:', error);

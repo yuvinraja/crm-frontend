@@ -53,10 +53,11 @@ export function CampaignDetails({ campaignId }: CampaignDetailsProps) {
   const fetchCampaignDetails = useCallback(async () => {
     setIsLoading(true);
     try {
-      const [campaignData, logsData] = await Promise.all([
+      const [campaignData, communicationsData] = await Promise.all([
         api.campaigns.getById(campaignId),
         api.communications.getByCampaign(campaignId),
       ]);
+      const logsData = communicationsData.logs;
       setCampaign(campaignData);
       setLogs(logsData);
       const sent = logsData.filter((l) => l.deliveryStatus === 'SENT').length;
@@ -107,8 +108,6 @@ export function CampaignDetails({ campaignId }: CampaignDetailsProps) {
   useEffect(() => {
     fetchCampaignDetails();
   }, [fetchCampaignDetails]);
-
-  // (fetchCampaignDetails defined via useCallback above)
 
   const getStatusColor = (status: string) => {
     switch (status) {
