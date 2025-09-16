@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import {
   Card,
   CardContent,
@@ -47,9 +47,63 @@ export function OrderList() {
   const [searchTerm, setSearchTerm] = useState('');
   const { toast } = useToast();
 
+  const fetchData = useCallback(async () => {
+    console.log('OrderList: Fetching data...');
+    try {
+      const [ordersResponse, customersResponse] = await Promise.all([
+        api.orders.getAll(),
+        api.customers.getAll(),
+      ]);
+
+      console.log('OrderList: Raw orders response:', ordersResponse);
+      console.log('OrderList: Raw customers response:', customersResponse);
+
+      // Handle different response formats
+      const ordersData = Array.isArray(ordersResponse)
+        ? ordersResponse
+        : Array.isArray((ordersResponse as { data?: Order[] })?.data)
+        ? (ordersResponse as { data: Order[] }).data
+        : [];
+
+      const customersData = Array.isArray(customersResponse)
+        ? customersResponse
+        : Array.isArray((customersResponse as { data?: Customer[] })?.data)
+        ? (customersResponse as { data: Customer[] }).data
+        : [];
+
+      console.log('OrderList: Processed orders data:', ordersData);
+      console.log('OrderList: Processed customers data:', customersData);
+
+      // Sort orders by most recent first
+      const sortedOrders = ordersData.sort(
+        (a: Order, b: Order) =>
+          new Date(b.orderDate).getTime() - new Date(a.orderDate).getTime()
+      );
+
+      setOrders(sortedOrders);
+      setFilteredOrders(sortedOrders);
+      setCustomers(customersData);
+
+      console.log('OrderList: Successfully set orders:', sortedOrders.length);
+    } catch (error) {
+      console.error('Failed to fetch orders:', error);
+      toast({
+        title: 'Failed to load orders',
+        description: 'Unable to fetch orders. Please try again.',
+        variant: 'destructive',
+      });
+      // Set empty arrays on error
+      setOrders([]);
+      setFilteredOrders([]);
+      setCustomers([]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [toast]);
+
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [fetchData]);
 
   useEffect(() => {
     if (searchTerm) {
@@ -66,33 +120,6 @@ export function OrderList() {
       setFilteredOrders(orders);
     }
   }, [searchTerm, orders, customers]);
-
-  const fetchData = async () => {
-    try {
-      const [ordersData, customersData] = await Promise.all([
-        api.orders.getAll(),
-        api.customers.getAll(),
-      ]);
-
-      // Sort orders by most recent first
-      const sortedOrders = ordersData.sort(
-        (a: Order, b: Order) =>
-          new Date(b.orderDate).getTime() - new Date(a.orderDate).getTime()
-      );
-
-      setOrders(sortedOrders);
-      setFilteredOrders(sortedOrders);
-      setCustomers(customersData);
-    } catch (error) {
-      toast({
-        title: 'Failed to load orders',
-        description: 'Unable to fetch orders. Please try again.',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -122,6 +149,15 @@ export function OrderList() {
     return { label: 'Older', color: 'bg-gray-100 text-gray-800' };
   };
 
+  console.log(
+    'OrderList: Rendering with orders:',
+    orders.length,
+    'filtered:',
+    filteredOrders.length,
+    'isLoading:',
+    isLoading
+  );
+
   if (isLoading) {
     return (
       <Card>
@@ -147,9 +183,9 @@ export function OrderList() {
           <ShoppingCart className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
           <CardTitle className="mb-2">No orders yet</CardTitle>
           <CardDescription className="mb-4">
-            Orders will appear here once customers start purchasing
+            Orders will appear here once customers start purchasing. Debug:
+            isLoading={isLoading.toString()}, orders.length={orders.length}
           </CardDescription>
-          <Button>Add Test Order</Button>
         </CardContent>
       </Card>
     );
