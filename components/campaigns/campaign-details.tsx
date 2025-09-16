@@ -30,7 +30,7 @@ import {
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
-import { Campaign, CommunicationLog } from '@/lib/types';
+import { Campaign, CommunicationLog, User } from '@/lib/types';
 import Link from 'next/link';
 
 interface CampaignDetailsProps {
@@ -57,9 +57,11 @@ export function CampaignDetails({ campaignId }: CampaignDetailsProps) {
         api.campaigns.getById(campaignId),
         api.communications.getByCampaign(campaignId),
       ]);
-      const logsData = communicationsData.logs;
+
+      const logsData = communicationsData.logs || [];
       setCampaign(campaignData);
       setLogs(logsData);
+
       const sent = logsData.filter((l) => l.deliveryStatus === 'SENT').length;
       const failed = logsData.filter(
         (l) => l.deliveryStatus === 'FAILED'
@@ -68,6 +70,7 @@ export function CampaignDetails({ campaignId }: CampaignDetailsProps) {
         (l) => l.deliveryStatus === 'PENDING'
       ).length;
       const audienceSize = logsData.length;
+
       const buckets = [
         { label: '<1m', count: 0 },
         { label: '1-5m', count: 0 },
@@ -87,6 +90,7 @@ export function CampaignDetails({ campaignId }: CampaignDetailsProps) {
         else if (diffMin < 60) buckets[3].count++;
         else buckets[4].count++;
       });
+
       setStats({
         sent,
         failed,
@@ -177,6 +181,13 @@ export function CampaignDetails({ campaignId }: CampaignDetailsProps) {
       ? ((stats.sent / stats.audienceSize) * 100).toFixed(1)
       : '0';
 
+  // Safely resolve createdBy (string ID or populated user object)
+  const renderCreatedBy = (createdBy: string | User | undefined) => {
+    if (!createdBy) return '-';
+    if (typeof createdBy === 'string') return createdBy;
+    return createdBy.name || createdBy.email || createdBy._id;
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center space-x-4">
@@ -197,6 +208,7 @@ export function CampaignDetails({ campaignId }: CampaignDetailsProps) {
 
       {/* Stats Cards */}
       <div className="grid gap-6 md:grid-cols-4">
+        {/* Total Audience */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
@@ -210,6 +222,7 @@ export function CampaignDetails({ campaignId }: CampaignDetailsProps) {
           </CardContent>
         </Card>
 
+        {/* Sent */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
@@ -227,6 +240,7 @@ export function CampaignDetails({ campaignId }: CampaignDetailsProps) {
           </CardContent>
         </Card>
 
+        {/* Failed */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Failed</CardTitle>
@@ -240,6 +254,7 @@ export function CampaignDetails({ campaignId }: CampaignDetailsProps) {
           </CardContent>
         </Card>
 
+        {/* Pending */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Pending</CardTitle>
@@ -298,21 +313,17 @@ export function CampaignDetails({ campaignId }: CampaignDetailsProps) {
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <Label className="text-xs text-muted-foreground">
-                Campaign ID
-              </Label>
+              <FieldLabel>Campaign ID</FieldLabel>
               <p className="font-mono text-sm">{campaign._id}</p>
             </div>
             <div>
-              <Label className="text-xs text-muted-foreground">
-                Created By
-              </Label>
-              <p className="text-sm">{campaign.createdBy}</p>
+              <FieldLabel>Created By</FieldLabel>
+              <p className="text-sm">
+                {renderCreatedBy(campaign.createdBy as any)}
+              </p>
             </div>
             <div>
-              <Label className="text-xs text-muted-foreground">
-                Created At
-              </Label>
+              <FieldLabel>Created At</FieldLabel>
               <div className="flex items-center space-x-2">
                 <Calendar className="w-4 h-4 text-muted-foreground" />
                 <span className="text-sm">
@@ -321,9 +332,7 @@ export function CampaignDetails({ campaignId }: CampaignDetailsProps) {
               </div>
             </div>
             <div>
-              <Label className="text-xs text-muted-foreground">
-                Target Segment
-              </Label>
+              <FieldLabel>Target Segment</FieldLabel>
               <div className="flex items-center space-x-2">
                 <Target className="w-4 h-4 text-muted-foreground" />
                 <span className="text-sm">{campaign.segmentId}</span>
@@ -391,7 +400,7 @@ export function CampaignDetails({ campaignId }: CampaignDetailsProps) {
   );
 }
 
-function Label({ className, children, ...props }: any) {
+function FieldLabel({ className, children, ...props }: any) {
   return (
     <label
       className={`text-xs text-muted-foreground ${className || ''}`}
