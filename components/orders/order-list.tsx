@@ -8,7 +8,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -19,22 +18,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import {
-  ShoppingCart,
-  Search,
-  DollarSign,
-  Calendar,
-  MoreHorizontal,
-  Eye,
-  User,
-} from 'lucide-react';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+import { ShoppingCart, Search, DollarSign, Calendar, User } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
 import { Order, Customer } from '@/lib/types';
@@ -76,7 +60,6 @@ export function OrderList() {
       setOrders(sortedOrders);
       setFilteredOrders(sortedOrders);
       setCustomers(customersData);
-
     } catch (error) {
       console.error('Failed to fetch orders:', error);
       toast({
@@ -250,7 +233,6 @@ export function OrderList() {
                   <TableHead>Order Date</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Created</TableHead>
-                  <TableHead className="w-[100px]">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -302,29 +284,6 @@ export function OrderList() {
                         <span className="text-sm">
                           {new Date(order.createdAt).toLocaleDateString()}
                         </span>
-                      </TableCell>
-                      <TableCell>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon">
-                              <MoreHorizontal className="w-4 h-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem>
-                              <Eye className="w-4 h-4 mr-2" />
-                              View Details
-                            </DropdownMenuItem>
-                            <DropdownMenuItem>
-                              <User className="w-4 h-4 mr-2" />
-                              View Customer
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem className="text-destructive focus:text-destructive">
-                              Delete Order
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
                       </TableCell>
                     </TableRow>
                   );

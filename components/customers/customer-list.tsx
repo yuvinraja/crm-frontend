@@ -27,16 +27,7 @@ import {
   Phone,
   DollarSign,
   Calendar,
-  MoreHorizontal,
-  Eye,
 } from 'lucide-react';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import { api } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
 import { Customer } from '@/lib/types';
@@ -231,7 +222,6 @@ export function CustomerList() {
                   <TableHead>Last Visit</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Joined</TableHead>
-                  <TableHead className="w-[100px]">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -284,29 +274,6 @@ export function CustomerList() {
                         <span className="text-sm">
                           {new Date(customer.createdAt).toLocaleDateString()}
                         </span>
-                      </TableCell>
-                      <TableCell>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon">
-                              <MoreHorizontal className="w-4 h-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem>
-                              <Eye className="w-4 h-4 mr-2" />
-                              View Details
-                            </DropdownMenuItem>
-                            <DropdownMenuItem>
-                              <Mail className="w-4 h-4 mr-2" />
-                              Send Message
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem className="text-destructive focus:text-destructive">
-                              Delete Customer
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
                       </TableCell>
                     </TableRow>
                   );

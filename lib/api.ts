@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import {
   User,
   Customer,
@@ -12,9 +13,6 @@ import {
   CreateSegmentRequest,
   UpdateSegmentRequest,
   CreateCampaignRequest,
-  UpdateCampaignRequest,
-  CampaignStats,
-  CampaignHistory,
   ApiResponseWrapper,
 } from './types';
 
@@ -38,7 +36,7 @@ export async function apiRequest<T>(
       'Content-Type': 'application/json',
       ...options.headers,
     },
-    credentials: 'include', // Include cookies for authentication
+    credentials: 'include',
     ...options,
   };
 
@@ -52,7 +50,6 @@ export async function apiRequest<T>(
       );
     }
 
-    // Handle empty responses
     const contentType = response.headers.get('content-type');
     if (contentType && contentType.includes('application/json')) {
       return await response.json();
@@ -91,6 +88,9 @@ export const api = {
       throw new ApiError(response.status, 'User not authenticated');
     },
     logout: () => apiRequest<{ message: string }>('/auth/logout'),
+    initiateLogin: () => {
+      window.location.href = `${API_BASE_URL}/auth/google`;
+    },
   },
 
   // Customer endpoints
@@ -99,12 +99,12 @@ export const api = {
     getById: (id: string) =>
       apiRequest<ApiResponseWrapper<Customer>>(`/customers/${id}`),
     create: (data: CreateCustomerRequest) =>
-      apiRequest<Customer>('/customers', {
+      apiRequest<ApiResponseWrapper<Customer>>('/customers', {
         method: 'POST',
         body: JSON.stringify(data),
       }),
     update: (id: string, data: UpdateCustomerRequest) =>
-      apiRequest<Customer>(`/customers/${id}`, {
+      apiRequest<ApiResponseWrapper<Customer>>(`/customers/${id}`, {
         method: 'PUT',
         body: JSON.stringify(data),
       }),
@@ -114,18 +114,43 @@ export const api = {
       }),
   },
 
+  // Order endpoints
+  orders: {
+    getAll: () => apiRequest<ApiResponseWrapper<Order[]>>('/orders'),
+    getById: (id: string) =>
+      apiRequest<ApiResponseWrapper<Order[]>>(`/orders/${id}`),
+    getByCustomer: (customerId: string) =>
+      apiRequest<ApiResponseWrapper<Order[]>>(`/orders/customer/${customerId}`),
+    create: (data: CreateOrderRequest) =>
+      apiRequest<ApiResponseWrapper<Order>>('/orders', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+    update: (id: string, data: UpdateOrderRequest) =>
+      apiRequest<ApiResponseWrapper<Order>>(`/orders/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+      }),
+    delete: (id: string) =>
+      apiRequest<{ message: string }>(`/orders/${id}`, {
+        method: 'DELETE',
+      }),
+  },
+
   // Segment endpoints
   segments: {
     getAll: () => apiRequest<ApiResponseWrapper<Segment[]>>('/segments'),
     getById: (id: string) =>
-      apiRequest<ApiResponseWrapper<Segment[]>>(`/segments/${id}`),
+      apiRequest<ApiResponseWrapper<Segment>>(`/segments/${id}`),
+    getCustomers: (id: string) =>
+      apiRequest<ApiResponseWrapper<Customer[]>>(`/segments/${id}/customers`),
     create: (data: CreateSegmentRequest) =>
-      apiRequest<Segment>('/segments', {
+      apiRequest<ApiResponseWrapper<Segment>>('/segments', {
         method: 'POST',
         body: JSON.stringify(data),
       }),
     update: (id: string, data: UpdateSegmentRequest) =>
-      apiRequest<Segment>(`/segments/${id}`, {
+      apiRequest<ApiResponseWrapper<Segment>>(`/segments/${id}`, {
         method: 'PUT',
         body: JSON.stringify(data),
       }),
@@ -133,16 +158,16 @@ export const api = {
       apiRequest<{ message: string }>(`/segments/${id}`, {
         method: 'DELETE',
       }),
-    getAudience: (id: string) =>
-      apiRequest<Customer[]>(`/segments/${id}/customers`),
-    preview: (data: CreateSegmentRequest) =>
-      apiRequest<{ audienceSize: number; sampleCustomers: Customer[] }>(
-        '/segments/preview',
-        {
-          method: 'POST',
-          body: JSON.stringify(data),
-        }
-      ),
+    preview: (data: { conditions: any[]; logic: 'AND' | 'OR' }) =>
+      apiRequest<
+        ApiResponseWrapper<{
+          audienceSize: number;
+          sampleCustomers: Customer[];
+        }>
+      >('/segments/preview', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
   },
 
   // Campaign endpoints
@@ -150,58 +175,39 @@ export const api = {
     getAll: () => apiRequest<ApiResponseWrapper<Campaign[]>>('/campaigns'),
     getById: (id: string) =>
       apiRequest<ApiResponseWrapper<Campaign[]>>(`/campaigns/${id}`),
-    getHistory: () => apiRequest<CampaignHistory[]>('/campaigns/history'),
-    getStats: (id: string) =>
-      apiRequest<CampaignStats>(`/campaigns/${id}/stats`),
     create: (data: CreateCampaignRequest) =>
-      apiRequest<Campaign>('/campaigns', {
+      apiRequest<ApiResponseWrapper<Campaign>>('/campaigns', {
         method: 'POST',
         body: JSON.stringify(data),
-      }),
-    update: (id: string, data: UpdateCampaignRequest) =>
-      apiRequest<Campaign>(`/campaigns/${id}`, {
-        method: 'PUT',
-        body: JSON.stringify(data),
-      }),
-    delete: (id: string) =>
-      apiRequest<{ message: string }>(`/campaigns/${id}`, {
-        method: 'DELETE',
       }),
   },
 
   // Communication endpoints
   communications: {
-    getAll: () => apiRequest<CommunicationLog[]>('/communications'),
+    getAll: () =>
+      apiRequest<ApiResponseWrapper<CommunicationLog[]>>('/communications'),
     getById: (id: string) =>
-      apiRequest<CommunicationLog>(`/communications/${id}`),
+      apiRequest<ApiResponseWrapper<CommunicationLog>>(`/communications/${id}`),
     getByCampaign: (campaignId: string) =>
-      apiRequest<CommunicationLog[]>(`/communications/campaign/${campaignId}`),
+      apiRequest<ApiResponseWrapper<CommunicationLog[]>>(
+        `/communications/campaign/${campaignId}`
+      ),
     updateStatus: (id: string, status: 'PENDING' | 'SENT' | 'FAILED') =>
-      apiRequest<CommunicationLog>(`/communications/${id}/status`, {
-        method: 'PUT',
-        body: JSON.stringify({ deliveryStatus: status }),
-      }),
-  },
-
-  // Order endpoints
-  orders: {
-    getAll: () => apiRequest<Order[]>('/orders'),
-    getById: (id: string) => apiRequest<Order>(`/orders/${id}`),
-    getByCustomer: (customerId: string) =>
-      apiRequest<Order[]>(`/orders/customer/${customerId}`),
-    create: (data: CreateOrderRequest) =>
-      apiRequest<Order>('/orders', {
+      apiRequest<ApiResponseWrapper<CommunicationLog>>(
+        `/communications/${id}/status`,
+        {
+          method: 'PUT',
+          body: JSON.stringify({ deliveryStatus: status }),
+        }
+      ),
+    deliveryReceipt: (data: {
+      messageId: string;
+      status: 'SENT' | 'FAILED';
+      timestamp: string;
+    }) =>
+      apiRequest<{ message: string }>('/communications/delivery-receipt', {
         method: 'POST',
         body: JSON.stringify(data),
-      }),
-    update: (id: string, data: UpdateOrderRequest) =>
-      apiRequest<Order>(`/orders/${id}`, {
-        method: 'PUT',
-        body: JSON.stringify(data),
-      }),
-    delete: (id: string) =>
-      apiRequest<{ message: string }>(`/orders/${id}`, {
-        method: 'DELETE',
       }),
   },
 };

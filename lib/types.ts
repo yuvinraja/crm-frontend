@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-// TypeScript interfaces based on the backend API schemas
+// TypeScript interfaces matching the OpenAPI specification exactly
 
 export interface User {
   _id: string;
@@ -30,10 +30,11 @@ export interface Order {
   updatedAt: string;
 }
 
+// CORRECTED: Matching OpenAPI Condition schema
 export interface SegmentCondition {
-  field: string;
-  operator: string;
-  value: any;
+  field: 'totalSpending' | 'lastVisit' | 'orderCount';
+  operator: '>' | '<' | '=' | '>=' | '<=' | 'contains';
+  value: string | number | boolean;
 }
 
 export interface Segment {
@@ -56,6 +57,7 @@ export interface Campaign {
   updatedAt: string;
 }
 
+// CORRECTED: Matching OpenAPI VendorResponse schema
 export interface VendorResponse {
   messageId?: string;
   timestamp?: string;
@@ -70,17 +72,6 @@ export interface CommunicationLog {
   vendorResponse?: VendorResponse;
   createdAt: string;
   updatedAt: string;
-}
-
-// API Response types
-export interface ApiResponse<T> {
-  data: T;
-  message?: string;
-}
-
-export interface ApiError {
-  status: number;
-  message: string;
 }
 
 // Request types for creating/updating entities
@@ -132,47 +123,14 @@ export interface UpdateCampaignRequest {
   message?: string;
 }
 
-// Stats and analytics types
-export interface CampaignStats {
-  totalMessages: number;
-  sentMessages: number;
-  failedMessages: number;
-  pendingMessages: number;
-  deliveryRate: number;
-  // Additional properties used in the UI
-  audienceSize: number;
-  sent: number;
-  failed: number;
-  pending: number;
+// ADDED: Delivery receipt request type (matching OpenAPI spec)
+export interface DeliveryReceiptRequest {
+  messageId: string;
+  status: 'SENT' | 'FAILED';
+  timestamp: string;
 }
 
-export interface DashboardStats {
-  totalCustomers: number;
-  activeSegments: number;
-  campaignsSent: number;
-  engagementRate: number;
-  recentCustomers: number;
-  recentSegments: number;
-  recentCampaigns: number;
-  avgEngagementRate: number;
-  monthlyGrowth: {
-    customers: number;
-    segments: number;
-    campaigns: number;
-    engagement: number;
-  };
-}
-
-export interface CampaignHistory extends Campaign {
-  stats: CampaignStats;
-  segment: Segment;
-  // Additional properties used in UI
-  audienceSize: number;
-  sent: number;
-  failed: number;
-  segmentName?: string;
-}
-
+// API Response wrapper (used by your backend)
 export interface ApiResponseWrapper<T> {
   success: boolean;
   data: T;
@@ -183,4 +141,63 @@ export interface ApiResponseWrapper<T> {
     hasNext: boolean;
   };
   message?: string;
+}
+
+// Stats and analytics types (calculated client-side since backend doesn't provide them)
+export interface CampaignStats {
+  totalMessages: number;
+  sentMessages: number;
+  failedMessages: number;
+  pendingMessages: number;
+  deliveryRate: number;
+  audienceSize: number;
+  sent: number;
+  failed: number;
+  pending: number;
+}
+
+export interface DashboardStats {
+  totalCustomers: number;
+  totalOrders: number;
+  totalSegments: number;
+  totalCampaigns: number;
+  recentCustomers: number;
+  recentOrders: number;
+  recentSegments: number;
+  recentCampaigns: number;
+  totalRevenue: number;
+  avgOrderValue: number;
+}
+
+// Extended types for UI (combining data from multiple endpoints)
+export interface CampaignWithStats extends Campaign {
+  stats: CampaignStats;
+  segment?: Segment;
+  segmentName?: string;
+  audienceSize: number;
+  sent: number;
+  failed: number;
+  pending: number;
+}
+
+export interface CustomerWithOrders extends Customer {
+  orders: Order[];
+  orderCount: number;
+}
+
+export interface SegmentWithAudience extends Segment {
+  customers?: Customer[];
+  sampleCustomers?: Customer[];
+}
+
+// API Error type
+export interface ApiError {
+  status: number;
+  message: string;
+}
+
+// Segment preview response (matching OpenAPI spec)
+export interface SegmentPreviewResponse {
+  audienceSize: number;
+  sampleCustomers: Customer[];
 }
