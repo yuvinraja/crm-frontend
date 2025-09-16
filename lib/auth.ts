@@ -1,15 +1,5 @@
 // Authentication utilities and context for Google OAuth integration
-
-export interface User {
-  _id: string;
-  name: string;
-  email: string;
-  googleId?: string;
-  provider: 'google' | 'local';
-  avatar?: string;
-  createdAt: string;
-  updatedAt: string;
-}
+import { User } from './types';
 
 export interface AuthState {
   user: User | null;
@@ -25,15 +15,15 @@ class AuthService {
     isAuthenticated: boolean;
   }> {
     try {
-      const response = await fetch(`${this.baseUrl}/auth/status`, {
+      const response = await fetch(`${this.baseUrl}/auth/user`, {
         credentials: 'include',
       });
 
       if (response.ok) {
-        const data = await response.json();
+        const user = await response.json();
         return {
-          user: data.user || null,
-          isAuthenticated: data.isAuthenticated || false,
+          user: user || null,
+          isAuthenticated: !!user,
         };
       }
 
@@ -46,13 +36,13 @@ class AuthService {
 
   async getProfile(): Promise<User | null> {
     try {
-      const response = await fetch(`${this.baseUrl}/auth/profile`, {
+      const response = await fetch(`${this.baseUrl}/auth/user`, {
         credentials: 'include',
       });
 
       if (response.ok) {
-        const data = await response.json();
-        return data.user || null;
+        const user = await response.json();
+        return user || null;
       }
 
       return null;
@@ -69,7 +59,7 @@ class AuthService {
   async logout(): Promise<boolean> {
     try {
       const response = await fetch(`${this.baseUrl}/auth/logout`, {
-        method: 'POST',
+        method: 'GET',
         credentials: 'include',
       });
 

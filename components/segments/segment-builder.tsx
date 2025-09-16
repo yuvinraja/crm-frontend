@@ -1,162 +1,183 @@
-"use client"
+'use client';
 
-import { useState, useEffect } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Badge } from "@/components/ui/badge"
-import { Separator } from "@/components/ui/separator"
-import { Plus, X, Eye, Save, ArrowLeft, Sparkles } from "lucide-react"
-import { api } from "@/lib/api"
-import { useToast } from "@/hooks/use-toast"
-import Link from "next/link"
-
-interface SegmentCondition {
-  field: string
-  operator: string
-  value: string | number
-}
+import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import { Plus, X, Eye, Save, ArrowLeft, Sparkles } from 'lucide-react';
+import { api } from '@/lib/api';
+import { useToast } from '@/hooks/use-toast';
+import { SegmentCondition, CreateSegmentRequest } from '@/lib/types';
+import Link from 'next/link';
 
 interface SegmentData {
-  name: string
-  conditions: SegmentCondition[]
-  logic: "AND" | "OR"
+  name: string;
+  conditions: SegmentCondition[];
+  logic: 'AND' | 'OR';
 }
 
 const FIELD_OPTIONS = [
-  { value: "spend", label: "Total Spending", type: "number" },
-  { value: "visits", label: "Number of Visits", type: "number" },
-  { value: "inactiveDays", label: "Days Since Last Visit", type: "number" },
-]
+  { value: 'spend', label: 'Total Spending', type: 'number' },
+  { value: 'visits', label: 'Number of Visits', type: 'number' },
+  { value: 'inactiveDays', label: 'Days Since Last Visit', type: 'number' },
+];
 
 const OPERATOR_OPTIONS = [
-  { value: ">", label: "Greater than" },
-  { value: "<", label: "Less than" },
-  { value: "=", label: "Equal to" },
-]
+  { value: '>', label: 'Greater than' },
+  { value: '<', label: 'Less than' },
+  { value: '=', label: 'Equal to' },
+];
 
 export function SegmentBuilder() {
   const [segment, setSegment] = useState<SegmentData>({
-    name: "",
-    conditions: [{ field: "", operator: "", value: "" }],
-    logic: "AND",
-  })
-  const [isLoading, setIsLoading] = useState(false)
-  const [audienceSize, setAudienceSize] = useState<number | null>(null)
-  const [isPreviewLoading, setIsPreviewLoading] = useState(false)
-  const [isAIGenerated, setIsAIGenerated] = useState(false)
-  const { toast } = useToast()
-  const router = useRouter()
-  const searchParams = useSearchParams()
+    name: '',
+    conditions: [{ field: '', operator: '', value: '' }],
+    logic: 'AND',
+  });
+  const [isLoading, setIsLoading] = useState(false);
+  const [audienceSize, setAudienceSize] = useState<number | null>(null);
+  const [isPreviewLoading, setIsPreviewLoading] = useState(false);
+  const [isAIGenerated, setIsAIGenerated] = useState(false);
+  const { toast } = useToast();
+  const router = useRouter();
+  const searchParams = useSearchParams();
 
   useEffect(() => {
-    const aiGenerated = searchParams.get("aiGenerated")
-    const data = searchParams.get("data")
+    const aiGenerated = searchParams.get('aiGenerated');
+    const data = searchParams.get('data');
 
-    if (aiGenerated === "true" && data) {
+    if (aiGenerated === 'true' && data) {
       try {
-        const parsedData = JSON.parse(data)
-        setSegment(parsedData)
-        setIsAIGenerated(true)
+        const parsedData = JSON.parse(data);
+        setSegment(parsedData);
+        setIsAIGenerated(true);
         toast({
-          title: "AI segment loaded",
-          description: "Your AI-generated segment has been loaded. Review and save when ready.",
-        })
+          title: 'AI segment loaded',
+          description:
+            'Your AI-generated segment has been loaded. Review and save when ready.',
+        });
       } catch (error) {
         toast({
-          title: "Failed to load AI segment",
-          description: "There was an error loading the AI-generated segment.",
-          variant: "destructive",
-        })
+          title: 'Failed to load AI segment',
+          description: 'There was an error loading the AI-generated segment.',
+          variant: 'destructive',
+        });
       }
     }
-  }, [searchParams, toast])
+  }, [searchParams, toast]);
 
   const addCondition = () => {
     setSegment((prev) => ({
       ...prev,
-      conditions: [...prev.conditions, { field: "", operator: "", value: "" }],
-    }))
-  }
+      conditions: [...prev.conditions, { field: '', operator: '', value: '' }],
+    }));
+  };
 
   const removeCondition = (index: number) => {
     if (segment.conditions.length > 1) {
       setSegment((prev) => ({
         ...prev,
         conditions: prev.conditions.filter((_, i) => i !== index),
-      }))
+      }));
     }
-  }
+  };
 
-  const updateCondition = (index: number, field: keyof SegmentCondition, value: string | number) => {
+  const updateCondition = (
+    index: number,
+    field: keyof SegmentCondition,
+    value: string | number
+  ) => {
     setSegment((prev) => ({
       ...prev,
-      conditions: prev.conditions.map((condition, i) => (i === index ? { ...condition, [field]: value } : condition)),
-    }))
-  }
+      conditions: prev.conditions.map((condition, i) =>
+        i === index ? { ...condition, [field]: value } : condition
+      ),
+    }));
+  };
 
   const previewAudience = async () => {
-    if (!segment.name || segment.conditions.some((c) => !c.field || !c.operator || c.value === "")) {
+    if (
+      !segment.name ||
+      segment.conditions.some((c) => !c.field || !c.operator || c.value === '')
+    ) {
       toast({
-        title: "Incomplete segment",
-        description: "Please fill in all fields before previewing the audience.",
-        variant: "destructive",
-      })
-      return
+        title: 'Incomplete segment',
+        description:
+          'Please fill in all fields before previewing the audience.',
+        variant: 'destructive',
+      });
+      return;
     }
 
-    setIsPreviewLoading(true)
+    setIsPreviewLoading(true);
     try {
       // First save the segment temporarily to get an ID for preview
-      const tempSegment = await api.segments.create(segment)
-      const audience = await api.segments.getAudience(tempSegment._id)
-      setAudienceSize(audience.length)
+      const tempSegment = await api.segments.create(segment);
+      const audience = await api.segments.getAudience(tempSegment._id);
+      setAudienceSize(audience.length);
       toast({
-        title: "Audience Preview",
+        title: 'Audience Preview',
         description: `This segment would target ${audience.length} customers.`,
-      })
+      });
     } catch (error) {
       toast({
-        title: "Preview failed",
-        description: "Unable to preview audience. Please try again.",
-        variant: "destructive",
-      })
+        title: 'Preview failed',
+        description: 'Unable to preview audience. Please try again.',
+        variant: 'destructive',
+      });
     } finally {
-      setIsPreviewLoading(false)
+      setIsPreviewLoading(false);
     }
-  }
+  };
 
   const saveSegment = async () => {
-    if (!segment.name || segment.conditions.some((c) => !c.field || !c.operator || c.value === "")) {
+    if (
+      !segment.name ||
+      segment.conditions.some((c) => !c.field || !c.operator || c.value === '')
+    ) {
       toast({
-        title: "Incomplete segment",
-        description: "Please fill in all required fields.",
-        variant: "destructive",
-      })
-      return
+        title: 'Incomplete segment',
+        description: 'Please fill in all required fields.',
+        variant: 'destructive',
+      });
+      return;
     }
 
-    setIsLoading(true)
+    setIsLoading(true);
     try {
-      await api.segments.create(segment)
+      await api.segments.create(segment);
       toast({
-        title: "Segment created",
-        description: "Your customer segment has been saved successfully.",
-      })
-      router.push("/segments")
+        title: 'Segment created',
+        description: 'Your customer segment has been saved successfully.',
+      });
+      router.push('/segments');
     } catch (error) {
       toast({
-        title: "Save failed",
-        description: "Unable to save segment. Please try again.",
-        variant: "destructive",
-      })
+        title: 'Save failed',
+        description: 'Unable to save segment. Please try again.',
+        variant: 'destructive',
+      });
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   return (
     <div className="space-y-6">
@@ -168,9 +189,14 @@ export function SegmentBuilder() {
         </Button>
         <div>
           <div className="flex items-center space-x-2">
-            <h1 className="text-3xl font-bold text-foreground font-playfair">Create Customer Segment</h1>
+            <h1 className="text-3xl font-bold text-foreground font-playfair">
+              Create Customer Segment
+            </h1>
             {isAIGenerated && (
-              <Badge variant="secondary" className="bg-purple-100 text-purple-800">
+              <Badge
+                variant="secondary"
+                className="bg-purple-100 text-purple-800"
+              >
                 <Sparkles className="w-3 h-3 mr-1" />
                 AI Generated
               </Badge>
@@ -178,8 +204,8 @@ export function SegmentBuilder() {
           </div>
           <p className="text-muted-foreground mt-2">
             {isAIGenerated
-              ? "Review your AI-generated segment rules and save when ready"
-              : "Define rules to target specific customer groups"}
+              ? 'Review your AI-generated segment rules and save when ready'
+              : 'Define rules to target specific customer groups'}
           </p>
         </div>
       </div>
@@ -190,7 +216,9 @@ export function SegmentBuilder() {
           <Card>
             <CardHeader>
               <CardTitle>Segment Details</CardTitle>
-              <CardDescription>Give your segment a descriptive name</CardDescription>
+              <CardDescription>
+                Give your segment a descriptive name
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
@@ -199,7 +227,9 @@ export function SegmentBuilder() {
                   id="segment-name"
                   placeholder="e.g., High-Value Customers"
                   value={segment.name}
-                  onChange={(e) => setSegment((prev) => ({ ...prev, name: e.target.value }))}
+                  onChange={(e) =>
+                    setSegment((prev) => ({ ...prev, name: e.target.value }))
+                  }
                 />
               </div>
             </CardContent>
@@ -209,7 +239,9 @@ export function SegmentBuilder() {
           <Card>
             <CardHeader>
               <CardTitle>Segment Rules</CardTitle>
-              <CardDescription>Define the conditions that customers must meet to be included</CardDescription>
+              <CardDescription>
+                Define the conditions that customers must meet to be included
+              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               {/* Logic Selector */}
@@ -217,7 +249,9 @@ export function SegmentBuilder() {
                 <Label>Combine rules with:</Label>
                 <Select
                   value={segment.logic}
-                  onValueChange={(value: "AND" | "OR") => setSegment((prev) => ({ ...prev, logic: value }))}
+                  onValueChange={(value: 'AND' | 'OR') =>
+                    setSegment((prev) => ({ ...prev, logic: value }))
+                  }
                 >
                   <SelectTrigger className="w-24">
                     <SelectValue />
@@ -234,14 +268,21 @@ export function SegmentBuilder() {
               {/* Conditions */}
               <div className="space-y-4">
                 {segment.conditions.map((condition, index) => (
-                  <div key={index} className="flex items-center space-x-3 p-4 border rounded-lg">
+                  <div
+                    key={index}
+                    className="flex items-center space-x-3 p-4 border rounded-lg"
+                  >
                     <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-3">
                       {/* Field */}
                       <div>
-                        <Label className="text-xs text-muted-foreground">Field</Label>
+                        <Label className="text-xs text-muted-foreground">
+                          Field
+                        </Label>
                         <Select
                           value={condition.field}
-                          onValueChange={(value) => updateCondition(index, "field", value)}
+                          onValueChange={(value) =>
+                            updateCondition(index, 'field', value)
+                          }
                         >
                           <SelectTrigger>
                             <SelectValue placeholder="Select field" />
@@ -258,17 +299,24 @@ export function SegmentBuilder() {
 
                       {/* Operator */}
                       <div>
-                        <Label className="text-xs text-muted-foreground">Operator</Label>
+                        <Label className="text-xs text-muted-foreground">
+                          Operator
+                        </Label>
                         <Select
                           value={condition.operator}
-                          onValueChange={(value) => updateCondition(index, "operator", value)}
+                          onValueChange={(value) =>
+                            updateCondition(index, 'operator', value)
+                          }
                         >
                           <SelectTrigger>
                             <SelectValue placeholder="Select operator" />
                           </SelectTrigger>
                           <SelectContent>
                             {OPERATOR_OPTIONS.map((operator) => (
-                              <SelectItem key={operator.value} value={operator.value}>
+                              <SelectItem
+                                key={operator.value}
+                                value={operator.value}
+                              >
                                 {operator.label}
                               </SelectItem>
                             ))}
@@ -278,12 +326,20 @@ export function SegmentBuilder() {
 
                       {/* Value */}
                       <div>
-                        <Label className="text-xs text-muted-foreground">Value</Label>
+                        <Label className="text-xs text-muted-foreground">
+                          Value
+                        </Label>
                         <Input
                           type="number"
                           placeholder="Enter value"
                           value={condition.value}
-                          onChange={(e) => updateCondition(index, "value", Number.parseFloat(e.target.value) || "")}
+                          onChange={(e) =>
+                            updateCondition(
+                              index,
+                              'value',
+                              Number.parseFloat(e.target.value) || ''
+                            )
+                          }
                         />
                       </div>
                     </div>
@@ -311,7 +367,11 @@ export function SegmentBuilder() {
                   </div>
                 ))}
 
-                <Button variant="outline" onClick={addCondition} className="w-full bg-transparent">
+                <Button
+                  variant="outline"
+                  onClick={addCondition}
+                  className="w-full bg-transparent"
+                >
                   <Plus className="w-4 h-4 mr-2" />
                   Add Condition
                 </Button>
@@ -325,10 +385,16 @@ export function SegmentBuilder() {
           <Card>
             <CardHeader>
               <CardTitle>Audience Preview</CardTitle>
-              <CardDescription>See how many customers match your segment</CardDescription>
+              <CardDescription>
+                See how many customers match your segment
+              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <Button onClick={previewAudience} disabled={isPreviewLoading} className="w-full">
+              <Button
+                onClick={previewAudience}
+                disabled={isPreviewLoading}
+                className="w-full"
+              >
                 {isPreviewLoading ? (
                   <div className="flex items-center space-x-2">
                     <div className="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
@@ -344,8 +410,12 @@ export function SegmentBuilder() {
 
               {audienceSize !== null && (
                 <div className="text-center p-4 bg-muted rounded-lg">
-                  <div className="text-2xl font-bold text-primary">{audienceSize}</div>
-                  <div className="text-sm text-muted-foreground">customers match this segment</div>
+                  <div className="text-2xl font-bold text-primary">
+                    {audienceSize}
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    customers match this segment
+                  </div>
                 </div>
               )}
             </CardContent>
@@ -358,17 +428,23 @@ export function SegmentBuilder() {
             <CardContent className="space-y-3">
               <div>
                 <Label className="text-xs text-muted-foreground">Name</Label>
-                <p className="font-medium">{segment.name || "Untitled Segment"}</p>
+                <p className="font-medium">
+                  {segment.name || 'Untitled Segment'}
+                </p>
               </div>
               <div>
-                <Label className="text-xs text-muted-foreground">Conditions</Label>
+                <Label className="text-xs text-muted-foreground">
+                  Conditions
+                </Label>
                 <p className="text-sm">
                   {segment.conditions.length} rule(s) with {segment.logic} logic
                 </p>
               </div>
               {isAIGenerated && (
                 <div>
-                  <Label className="text-xs text-muted-foreground">Source</Label>
+                  <Label className="text-xs text-muted-foreground">
+                    Source
+                  </Label>
                   <div className="flex items-center space-x-1">
                     <Sparkles className="w-3 h-3 text-purple-600" />
                     <p className="text-sm text-purple-600">Generated by AI</p>
@@ -376,7 +452,11 @@ export function SegmentBuilder() {
                 </div>
               )}
               <Separator />
-              <Button onClick={saveSegment} disabled={isLoading} className="w-full">
+              <Button
+                onClick={saveSegment}
+                disabled={isLoading}
+                className="w-full"
+              >
                 {isLoading ? (
                   <div className="flex items-center space-x-2">
                     <div className="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
@@ -394,5 +474,5 @@ export function SegmentBuilder() {
         </div>
       </div>
     </div>
-  )
+  );
 }

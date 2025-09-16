@@ -1,109 +1,126 @@
-"use client"
+'use client';
 
-import { useEffect, useState } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { ShoppingCart, Search, DollarSign, Calendar, MoreHorizontal, Eye, User } from "lucide-react"
+import { useEffect, useState } from 'react';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import {
+  ShoppingCart,
+  Search,
+  DollarSign,
+  Calendar,
+  MoreHorizontal,
+  Eye,
+  User,
+} from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { api } from "@/lib/api"
-import { useToast } from "@/hooks/use-toast"
-
-interface Order {
-  _id: string
-  customerId: string
-  orderAmount: number
-  orderDate: string
-  createdAt: string
-  updatedAt: string
-}
-
-interface Customer {
-  _id: string
-  name: string
-  email: string
-}
+} from '@/components/ui/dropdown-menu';
+import { api } from '@/lib/api';
+import { useToast } from '@/hooks/use-toast';
+import { Order, Customer } from '@/lib/types';
 
 export function OrderList() {
-  const [orders, setOrders] = useState<Order[]>([])
-  const [customers, setCustomers] = useState<Customer[]>([])
-  const [filteredOrders, setFilteredOrders] = useState<Order[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [searchTerm, setSearchTerm] = useState("")
-  const { toast } = useToast()
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [filteredOrders, setFilteredOrders] = useState<Order[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const { toast } = useToast();
 
   useEffect(() => {
-    fetchData()
-  }, [])
+    fetchData();
+  }, []);
 
   useEffect(() => {
     if (searchTerm) {
       const filtered = orders.filter((order) => {
-        const customer = customers.find((c) => c._id === order.customerId)
+        const customer = customers.find((c) => c._id === order.customerId);
         return (
           order._id.toLowerCase().includes(searchTerm.toLowerCase()) ||
           customer?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
           customer?.email.toLowerCase().includes(searchTerm.toLowerCase())
-        )
-      })
-      setFilteredOrders(filtered)
+        );
+      });
+      setFilteredOrders(filtered);
     } else {
-      setFilteredOrders(orders)
+      setFilteredOrders(orders);
     }
-  }, [searchTerm, orders, customers])
+  }, [searchTerm, orders, customers]);
 
   const fetchData = async () => {
     try {
-      const [ordersData, customersData] = await Promise.all([api.orders.getAll(), api.customers.getAll()])
+      const [ordersData, customersData] = await Promise.all([
+        api.orders.getAll(),
+        api.customers.getAll(),
+      ]);
 
       // Sort orders by most recent first
       const sortedOrders = ordersData.sort(
-        (a: Order, b: Order) => new Date(b.orderDate).getTime() - new Date(a.orderDate).getTime(),
-      )
+        (a: Order, b: Order) =>
+          new Date(b.orderDate).getTime() - new Date(a.orderDate).getTime()
+      );
 
-      setOrders(sortedOrders)
-      setFilteredOrders(sortedOrders)
-      setCustomers(customersData)
+      setOrders(sortedOrders);
+      setFilteredOrders(sortedOrders);
+      setCustomers(customersData);
     } catch (error) {
       toast({
-        title: "Failed to load orders",
-        description: "Unable to fetch orders. Please try again.",
-        variant: "destructive",
-      })
+        title: 'Failed to load orders',
+        description: 'Unable to fetch orders. Please try again.',
+        variant: 'destructive',
+      });
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-    }).format(amount)
-  }
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+    }).format(amount);
+  };
 
   const getCustomerName = (customerId: string) => {
-    const customer = customers.find((c) => c._id === customerId)
-    return customer ? customer.name : "Unknown Customer"
-  }
+    const customer = customers.find((c) => c._id === customerId);
+    return customer ? customer.name : 'Unknown Customer';
+  };
 
   const getOrderStatus = (orderDate: string, amount: number) => {
-    const daysSince = Math.floor((Date.now() - new Date(orderDate).getTime()) / (1000 * 60 * 60 * 24))
+    const daysSince = Math.floor(
+      (Date.now() - new Date(orderDate).getTime()) / (1000 * 60 * 60 * 24)
+    );
 
-    if (amount > 1000) return { label: "High Value", color: "bg-purple-100 text-purple-800" }
-    if (daysSince <= 1) return { label: "Recent", color: "bg-green-100 text-green-800" }
-    if (daysSince <= 7) return { label: "This Week", color: "bg-blue-100 text-blue-800" }
-    if (daysSince <= 30) return { label: "This Month", color: "bg-yellow-100 text-yellow-800" }
-    return { label: "Older", color: "bg-gray-100 text-gray-800" }
-  }
+    if (amount > 1000)
+      return { label: 'High Value', color: 'bg-purple-100 text-purple-800' };
+    if (daysSince <= 1)
+      return { label: 'Recent', color: 'bg-green-100 text-green-800' };
+    if (daysSince <= 7)
+      return { label: 'This Week', color: 'bg-blue-100 text-blue-800' };
+    if (daysSince <= 30)
+      return { label: 'This Month', color: 'bg-yellow-100 text-yellow-800' };
+    return { label: 'Older', color: 'bg-gray-100 text-gray-800' };
+  };
 
   if (isLoading) {
     return (
@@ -120,7 +137,7 @@ export function OrderList() {
           </div>
         </CardContent>
       </Card>
-    )
+    );
   }
 
   if (orders.length === 0) {
@@ -129,15 +146,20 @@ export function OrderList() {
         <CardContent>
           <ShoppingCart className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
           <CardTitle className="mb-2">No orders yet</CardTitle>
-          <CardDescription className="mb-4">Orders will appear here once customers start purchasing</CardDescription>
+          <CardDescription className="mb-4">
+            Orders will appear here once customers start purchasing
+          </CardDescription>
           <Button>Add Test Order</Button>
         </CardContent>
       </Card>
-    )
+    );
   }
 
-  const totalRevenue = orders.reduce((sum, order) => sum + order.orderAmount, 0)
-  const averageOrderValue = totalRevenue / orders.length
+  const totalRevenue = orders.reduce(
+    (sum, order) => sum + order.orderAmount,
+    0
+  );
+  const averageOrderValue = totalRevenue / orders.length;
 
   return (
     <div className="space-y-6">
@@ -168,7 +190,8 @@ export function OrderList() {
           <CardContent>
             <div className="text-2xl font-bold">{orders.length}</div>
             <p className="text-xs text-muted-foreground">
-              {filteredOrders.length !== orders.length && `${filteredOrders.length} filtered`}
+              {filteredOrders.length !== orders.length &&
+                `${filteredOrders.length} filtered`}
             </p>
           </CardContent>
         </Card>
@@ -179,7 +202,9 @@ export function OrderList() {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(averageOrderValue)}</div>
+            <div className="text-2xl font-bold">
+              {formatCurrency(averageOrderValue)}
+            </div>
             <p className="text-xs text-muted-foreground">per order</p>
           </CardContent>
         </Card>
@@ -190,7 +215,8 @@ export function OrderList() {
         <CardHeader>
           <CardTitle>Order History</CardTitle>
           <CardDescription>
-            {filteredOrders.length} order{filteredOrders.length !== 1 ? "s" : ""} found • Total Revenue:{" "}
+            {filteredOrders.length} order
+            {filteredOrders.length !== 1 ? 's' : ''} found • Total Revenue:{' '}
             {formatCurrency(totalRevenue)}
           </CardDescription>
         </CardHeader>
@@ -210,8 +236,13 @@ export function OrderList() {
               </TableHeader>
               <TableBody>
                 {filteredOrders.map((order) => {
-                  const customer = customers.find((c) => c._id === order.customerId)
-                  const status = getOrderStatus(order.orderDate, order.orderAmount)
+                  const customer = customers.find(
+                    (c) => c._id === order.customerId
+                  );
+                  const status = getOrderStatus(
+                    order.orderDate,
+                    order.orderAmount
+                  );
                   return (
                     <TableRow key={order._id}>
                       <TableCell>
@@ -221,25 +252,37 @@ export function OrderList() {
                         <div className="flex items-center space-x-2">
                           <User className="w-4 h-4 text-muted-foreground" />
                           <div>
-                            <div className="font-medium">{getCustomerName(order.customerId)}</div>
-                            {customer && <div className="text-sm text-muted-foreground">{customer.email}</div>}
+                            <div className="font-medium">
+                              {getCustomerName(order.customerId)}
+                            </div>
+                            {customer && (
+                              <div className="text-sm text-muted-foreground">
+                                {customer.email}
+                              </div>
+                            )}
                           </div>
                         </div>
                       </TableCell>
                       <TableCell>
-                        <div className="font-medium text-lg">{formatCurrency(order.orderAmount)}</div>
+                        <div className="font-medium text-lg">
+                          {formatCurrency(order.orderAmount)}
+                        </div>
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center space-x-2">
                           <Calendar className="w-4 h-4 text-muted-foreground" />
-                          <span className="text-sm">{new Date(order.orderDate).toLocaleDateString()}</span>
+                          <span className="text-sm">
+                            {new Date(order.orderDate).toLocaleDateString()}
+                          </span>
                         </div>
                       </TableCell>
                       <TableCell>
                         <Badge className={status.color}>{status.label}</Badge>
                       </TableCell>
                       <TableCell>
-                        <span className="text-sm">{new Date(order.createdAt).toLocaleDateString()}</span>
+                        <span className="text-sm">
+                          {new Date(order.createdAt).toLocaleDateString()}
+                        </span>
                       </TableCell>
                       <TableCell>
                         <DropdownMenu>
@@ -265,7 +308,7 @@ export function OrderList() {
                         </DropdownMenu>
                       </TableCell>
                     </TableRow>
-                  )
+                  );
                 })}
               </TableBody>
             </Table>
@@ -273,5 +316,5 @@ export function OrderList() {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }
