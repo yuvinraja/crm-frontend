@@ -185,7 +185,7 @@ export function CampaignDetails({ campaignId }: CampaignDetailsProps) {
   const renderCreatedBy = (createdBy: string | User | undefined) => {
     if (!createdBy) return '-';
     if (typeof createdBy === 'string') return createdBy;
-    return createdBy.name || createdBy.email || createdBy._id;
+    return createdBy.name || createdBy.email || createdBy._id || '-';
   };
 
   return (

@@ -31,6 +31,7 @@ interface CampaignData {
   name: string;
   segmentId: string;
   message: string;
+  objective: string;
 }
 
 export function CampaignCreator() {
@@ -38,11 +39,14 @@ export function CampaignCreator() {
     name: '',
     segmentId: '',
     message: '',
+    objective: '',
   });
   const [segments, setSegments] = useState<Segment[]>([]);
   const [selectedSegment, setSelectedSegment] = useState<Segment | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingSegments, setIsLoadingSegments] = useState(true);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [suggestions, setSuggestions] = useState<string[]>([]);
   const { toast } = useToast();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -78,6 +82,93 @@ export function CampaignCreator() {
       setSelectedSegment(segment || null);
     }
   }, [campaign.segmentId, segments]);
+
+  // Improved generateSuggestions function
+  const generateSuggestions = async () => {
+    if (!campaign.objective.trim()) {
+      toast({
+        title: 'Objective is missing',
+        description:
+          'Please enter a campaign objective to generate suggestions.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Rate limiting check (optional)
+    const lastGenerated = localStorage.getItem('lastSuggestionGenerated');
+    const now = Date.now();
+    if (lastGenerated && now - parseInt(lastGenerated) < 30000) {
+      // 30 second cooldown
+      toast({
+        title: 'Please wait',
+        description: 'You can generate suggestions again in a few seconds.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsGenerating(true);
+    setSuggestions([]);
+
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
+
+      const response = await fetch('/api/generate-suggestions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          objective: campaign.objective.trim(),
+          // Optional: include segment info for more targeted suggestions
+          segmentName: selectedSegment?.name,
+        }),
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `HTTP ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      // Validate response structure
+      if (!data.suggestions || !Array.isArray(data.suggestions)) {
+        throw new Error('Invalid response format');
+      }
+
+      setSuggestions(data.suggestions);
+      localStorage.setItem('lastSuggestionGenerated', now.toString());
+
+      toast({
+        title: 'Suggestions generated',
+        description: `Generated ${data.suggestions.length} message suggestions.`,
+      });
+    } catch (error: any) {
+      console.error('Suggestion generation error:', error);
+
+      let errorMessage = 'Could not fetch suggestions. Please try again later.';
+
+      if (error.name === 'AbortError') {
+        errorMessage = 'Request timed out. Please try again.';
+      } else if (error.message.includes('HTTP')) {
+        errorMessage = 'Server error. Please try again later.';
+      }
+
+      toast({
+        title: 'Failed to generate suggestions',
+        description: errorMessage,
+        variant: 'destructive',
+      });
+    } finally {
+      setIsGenerating(false);
+    }
+  };
 
   const createCampaign = async () => {
     if (!campaign.name || !campaign.segmentId || !campaign.message) {
@@ -207,7 +298,38 @@ export function CampaignCreator() {
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
-                <Label htmlFor="campaign-message">Message *</Label>
+                <Label htmlFor="campaign-objective">Campaign Objective</Label>
+                <Input
+                  id="campaign-objective"
+                  placeholder="e.g., Re-engage inactive customers"
+                  value={campaign.objective}
+                  onChange={(e) =>
+                    setCampaign((prev) => ({
+                      ...prev,
+                      objective: e.target.value,
+                    }))
+                  }
+                />
+              </div>
+              <div className="space-y-2 mt-4">
+                <div className="flex justify-between items-center">
+                  <Label htmlFor="campaign-message">Message *</Label>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={generateSuggestions}
+                    disabled={isGenerating || !campaign.objective}
+                  >
+                    {isGenerating ? (
+                      <div className="flex items-center space-x-2">
+                        <div className="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
+                        <span>Generating...</span>
+                      </div>
+                    ) : (
+                      'Generate Suggestions'
+                    )}
+                  </Button>
+                </div>
                 <Textarea
                   id="campaign-message"
                   placeholder="Write your campaign message here..."
@@ -224,6 +346,29 @@ export function CampaignCreator() {
                   {campaign.message.length} characters
                 </p>
               </div>
+              {suggestions.length > 0 && (
+                <div className="space-y-4 mt-4">
+                  <Label>Suggestions</Label>
+                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    {suggestions.map((suggestion, index) => (
+                      <Card
+                        key={index}
+                        className="cursor-pointer hover:border-primary"
+                        onClick={() =>
+                          setCampaign((prev) => ({
+                            ...prev,
+                            message: suggestion,
+                          }))
+                        }
+                      >
+                        <CardContent className="p-4 text-sm">
+                          {suggestion}
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
