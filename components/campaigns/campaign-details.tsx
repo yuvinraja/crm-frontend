@@ -278,14 +278,14 @@ export function CampaignDetails({ campaignId }: CampaignDetailsProps) {
     }
   }, []);
 
-  const renderCreatedBy = useCallback(
-    (createdBy: string | User | undefined): string => {
-      if (!createdBy) return 'Unknown';
-      if (typeof createdBy === 'string') return createdBy;
-      return createdBy.name || createdBy.email || createdBy._id || 'Unknown';
-    },
-    []
-  );
+  // Helper function to get creator display name
+  const getCreatorDisplayName = (
+    createdBy: string | User | undefined
+  ): string => {
+    if (!createdBy) return 'Unknown';
+    if (typeof createdBy === 'string') return createdBy;
+    return createdBy.name || createdBy.email || createdBy._id || 'Unknown';
+  };
 
   const successRate = useMemo(() => {
     if (!state.stats || state.stats.audienceSize === 0) return '0';
@@ -551,7 +551,7 @@ export function CampaignDetails({ campaignId }: CampaignDetailsProps) {
             <InfoField label="Campaign ID" value={state.campaign._id} isMono />
             <InfoField
               label="Created By"
-              value={renderCreatedBy(
+              value={getCreatorDisplayName(
                 state.campaign.createdBy as string | User | undefined
               )}
             />
