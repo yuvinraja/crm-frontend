@@ -6,7 +6,6 @@ import { Playfair_Display } from 'next/font/google';
 import { Suspense } from 'react';
 import './globals.css';
 import { AuthProvider } from '@/components/auth/auth-provider';
-import Link from 'next/link';
 
 const playfair = Playfair_Display({
   subsets: ['latin'],
@@ -33,25 +32,6 @@ export default function RootLayout({
         <AuthProvider>
           <Suspense fallback={null}>{children}</Suspense>
         </AuthProvider>
-        <footer>
-          <div className="text-center text-sm text-muted-foreground py-4">
-            Built with ❤️ by Yuvin Raja for XENO. Access the{' '}
-            <Link
-              href="https://github.com/yuvinraja/crm-frontend"
-              className="text-primary underline"
-            >
-              Frontend
-            </Link>
-            . and{' '}
-            <Link
-              href="https://github.com/yuvinraja/crm-frontend"
-              className="text-primary underline"
-            >
-              Backend
-            </Link>
-            . source code on GitHub.
-          </div>
-        </footer>
       </body>
     </html>
   );

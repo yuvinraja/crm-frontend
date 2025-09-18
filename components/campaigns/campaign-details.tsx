@@ -622,7 +622,9 @@ export function CampaignDetails({ campaignId }: CampaignDetailsProps) {
                   {state.logs.map((log) => (
                     <TableRow key={log._id}>
                       <TableCell className="font-mono text-sm">
-                        {log.customerId}
+                        {typeof log.customerId === 'string'
+                          ? log.customerId
+                          : log.customerId._id}
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center space-x-2">

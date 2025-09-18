@@ -65,7 +65,15 @@ export interface VendorResponse {
 
 export interface CommunicationLog {
   _id: string;
-  customerId: string;
+  // Backend may return populated customer instead of just the ID
+  customerId:
+    | string
+    | {
+        _id: string;
+        name?: string;
+        email?: string;
+        phone?: string;
+      };
   campaignId: string;
   deliveryStatus: 'PENDING' | 'SENT' | 'FAILED';
   vendorResponse?: VendorResponse;
