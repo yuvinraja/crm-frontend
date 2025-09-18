@@ -36,6 +36,18 @@ export function CampaignHistory() {
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
+  // Helper function to get segment display name
+  const getSegmentDisplayName = (campaign: CampaignHistoryType): string => {
+    if (campaign.segmentName) return campaign.segmentName;
+    if (campaign.segment?.name) return campaign.segment.name;
+    if (typeof campaign.segmentId === 'object' && campaign.segmentId?.name) {
+      return campaign.segmentId.name;
+    }
+    return typeof campaign.segmentId === 'string'
+      ? campaign.segmentId
+      : 'Unknown';
+  };
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -138,12 +150,9 @@ export function CampaignHistory() {
                     <TableCell>
                       <div>
                         <div className="font-medium">{campaign.name}</div>
-                        {(campaign.segmentName || campaign.segment?.name) && (
-                          <div className="text-sm text-muted-foreground">
-                            Target:{' '}
-                            {campaign.segmentName || campaign.segment?.name}
-                          </div>
-                        )}
+                        <div className="text-sm text-muted-foreground">
+                          Target: {getSegmentDisplayName(campaign)}
+                        </div>
                       </div>
                     </TableCell>
                     <TableCell>

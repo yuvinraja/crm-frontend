@@ -34,7 +34,7 @@ import {
 } from 'lucide-react';
 import { api, ApiError } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
-import { Campaign, CommunicationLog, User } from '@/lib/types';
+import { Campaign, CommunicationLog, User, Segment } from '@/lib/types';
 import Link from 'next/link';
 
 interface CampaignDetailsProps {
@@ -285,6 +285,13 @@ export function CampaignDetails({ campaignId }: CampaignDetailsProps) {
     if (!createdBy) return 'Unknown';
     if (typeof createdBy === 'string') return createdBy;
     return createdBy.name || createdBy.email || createdBy._id || 'Unknown';
+  };
+
+  // Helper function to get segment display info
+  const getSegmentDisplayInfo = (segmentId: string | Segment): string => {
+    if (!segmentId) return 'Unknown';
+    if (typeof segmentId === 'string') return segmentId;
+    return segmentId.name || segmentId._id || 'Unknown';
   };
 
   const successRate = useMemo(() => {
@@ -567,7 +574,7 @@ export function CampaignDetails({ campaignId }: CampaignDetailsProps) {
             />
             <InfoField
               label="Target Segment"
-              value={state.campaign.segmentId}
+              value={getSegmentDisplayInfo(state.campaign.segmentId)}
               icon={
                 <Target
                   className="w-4 h-4 text-muted-foreground"

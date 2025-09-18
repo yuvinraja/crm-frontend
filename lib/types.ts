@@ -49,7 +49,7 @@ export interface Segment {
 export interface Campaign {
   _id: string;
   name: string;
-  segmentId: string;
+  segmentId: string | Segment; // Can be either ID string or populated segment object
   message: string;
   createdBy?: string;
   createdAt: string;
@@ -215,7 +215,7 @@ export interface SegmentPreviewResponse {
 export interface CampaignHistory {
   _id: string;
   name: string;
-  segmentId: string;
+  segmentId: string | Segment; // Can be either ID string or populated segment object
   segmentName?: string; // Optional, if populated
   segment?: Segment; // Optional, if populated
   audienceSize?: number; // Optional, if calculated
