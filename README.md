@@ -1,36 +1,153 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Modern CRM Frontend
+
+A sophisticated Customer Relationship Management frontend application built with Next.js 15 and TypeScript, featuring AI-powered campaign generation and advanced customer segmentation.
+
+## Key Features
+
+### **Dashboard & Analytics**
+
+- Real-time customer metrics and engagement tracking
+- Interactive charts with Recharts integration
+- Growth statistics and performance indicators
+
+### **Customer Management**
+
+- Complete CRUD operations for customer data
+- Order tracking and purchase history
+- Smart customer insights and analytics
+
+### **Advanced Segmentation**
+
+- Dynamic customer segmentation with complex conditions
+- Visual segment builder with AND/OR logic
+- Real-time audience size calculation
+
+### **AI-Powered Campaigns**
+
+- Google Gemini AI integration for message generation
+- Targeted campaign creation with segment selection
+- Campaign history and performance tracking
+
+### **Authentication & Security**
+
+- Google OAuth integration (with Passport.js)
+- Protected routes with role-based access
+- Secure session management
+
+## Technical Stack
+
+### **Frontend Framework**
+
+- **Next.js 15** with App Router and React 19
+- **TypeScript** for type safety
+- **Turbopack** for optimized builds
+
+### **UI/UX Design**
+
+- **Tailwind CSS** with custom design system
+- **Shadcn/UI** component library
+- **Lucide React** icons
+- **Geist & Playfair Display** fonts
+
+### **State Management & Forms**
+
+- **React Hook Form** with Zod validation
+- **Sonner** for toast notifications
+
+### **AI Integration**
+
+- **Google Gemini AI** for content generation
+- Custom API routes for AI processing
+- Intelligent campaign message suggestions
+
+## Architecture
+
+### **Component Structure**
+
+```text
+components/
+├── auth/           # Authentication components
+├── campaigns/      # Campaign management
+├── customers/      # Customer operations
+├── segments/       # Segmentation builder
+├── orders/         # Order management
+├── layout/         # App layout & navigation
+└── ui/            # Reusable UI components
+```
+
+### **App Router Structure**
+
+```text
+app/
+├── api/           # API routes (AI integration)
+├── auth/          # Authentication pages
+├── campaigns/     # Campaign management
+├── customers/     # Customer management
+├── segments/      # Segmentation interface
+└── orders/        # Order tracking
+```
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
+
+- Node.js 18+
+- npm/yarn/pnpm
+
+### Installation
+
+1. **Clone the repository**
+
+   ```bash
+   git clone https://github.com/yuvinraja/crm-frontend.git
+   cd crm-frontend
+   ```
+
+2. **Install dependencies**
+
+   ```bash
+   npm install
+   ```
+
+3. **Environment Setup**
+
+   ```bash
+   # Create .env.local file
+   NEXT_PUBLIC_API_URL=your_backend_api_url
+   GEMINI_API_KEY=your_gemini_api_key
+   ```
+
+4. **Run development server**
+
+   ```bash
+   npm run dev
+   ```
+
+5. **Open application**
+
+   Navigate to [http://localhost:3001](http://localhost:3001)
+
+## Available Scripts
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm run dev      # Start development server with Turbopack
+npm run build    # Build for production
+npm run start    # Start production server
+npm run lint     # Run ESLint
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Design System
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- **Responsive Design**: Mobile-first approach with breakpoint optimization
+- **Dark/Light Mode**: Theme provider with system preference detection
+- **Accessibility**: WCAG compliant with Radix UI primitives
+- **Component Library**: Consistent design tokens and reusable components
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Integration
 
-## Learn More
+This frontend is designed to work with a REST API backend featuring:
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Customer and order management endpoints
+- Segment creation and audience calculation
+- Campaign execution and tracking
+- Authentication and user management

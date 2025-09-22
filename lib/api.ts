@@ -293,27 +293,6 @@ export const api = {
         stats: { total: 0, sent: 0, failed: 0, pending: 0 },
       });
     },
-
-    updateStatus: async (id: string, status: 'PENDING' | 'SENT' | 'FAILED') =>
-      unwrap(
-        await apiRequest<ApiResponseWrapper<CommunicationLog>>(
-          `/communications/${id}/status`,
-          {
-            method: 'PUT',
-            body: JSON.stringify({ deliveryStatus: status }),
-          }
-        ),
-        {} as CommunicationLog
-      ),
-    deliveryReceipt: (data: {
-      messageId: string;
-      status: 'SENT' | 'FAILED';
-      timestamp: string;
-    }) =>
-      apiRequest<{ message: string }>('/communications/delivery-receipt', {
-        method: 'POST',
-        body: JSON.stringify(data),
-      }),
   },
   // Dashboard aggregated stats (client-side composition)
   dashboard: {
